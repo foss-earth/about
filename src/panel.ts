@@ -28,6 +28,12 @@ export interface LatestDeployPort {
 }
 
 export interface AboutPanelOptions {
+  /** The host's DOM realm. Omit only for the legacy ambient-document adapter. */
+  document?: Document;
+  /** Host tab visibility subscription; returns a stop called on disposal. */
+  whenShown?: (element: HTMLElement, listener: () => void) => () => void;
+  /** Host cancellation factory for its optional deployment request. */
+  createAbortController?: () => Pick<AbortController, "signal" | "abort">;
   /** Explicit page-owned data; pass readBuiltFrom(document) in the host if desired. */
   builtFrom: BuiltFrom | null;
   identity: AppIdentity;
@@ -46,15 +52,15 @@ export interface AboutPanelHandle {
 /** It was "Deploy", which an iPhone running a page four releases old showed with the newest deploy. */
 const SITE_DEPLOY_LABEL = "Site's latest deploy";
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
+function el<K extends keyof HTMLElementTagNameMap>(document: Document, tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag);
   if (className) element.className = className;
   if (text !== undefined) element.textContent = text;
   return element;
 }
 
-function externalLink(label: string, href: string, icon: () => SVGSVGElement): HTMLAnchorElement {
-  const link = el("a", "foss-earth-about__link");
+function externalLink(document: Document, label: string, href: string, icon: () => SVGSVGElement): HTMLAnchorElement {
+  const link = el(document, "a", "foss-earth-about__link");
   const safe = safeExternalUrl(href);
   if (safe) link.href = safe;
   link.target = "_blank";
@@ -64,14 +70,14 @@ function externalLink(label: string, href: string, icon: () => SVGSVGElement): H
 }
 
 /** "a2c6c28", as `git log --oneline` names it, with the full hash on hover. */
-function commitLabel(hash: string): HTMLElement {
-  const code = el("code", "foss-earth-about__commit", shortCommit(hash));
+function commitLabel(document: Document, hash: string): HTMLElement {
+  const code = el(document, "code", "foss-earth-about__commit", shortCommit(hash));
   code.title = hash;
   return code;
 }
 
-function flag(text: string, title: string): HTMLElement {
-  const element = el("span", "foss-earth-about__flag", text);
+function flag(document: Document, text: string, title: string): HTMLElement {
+  const element = el(document, "span", "foss-earth-about__flag", text);
   element.title = title;
   return element;
 }
@@ -84,13 +90,13 @@ const FROM_LABELS: Record<BuiltFromPart["from"], string> = {
 };
 
 /** The one line a part shows closed: its name, its version and its flags. Its commit is the first of its commits, inside. */
-function partLine(part: BuiltFromPart): HTMLElement[] {
-  const items: HTMLElement[] = [el("span", "foss-earth-about__name", part.name)];
-  if (part.version) items.push(el("span", "foss-earth-about__version", part.version));
-  if (part.artifact) items.push(flag(`${part.artifact.role} · ${part.artifact.availability}${part.artifact.optional ? " · optional" : ""}`, part.artifact.reason ?? "Availability describes this release artifact; admission is verified by the host."));
-  if (part.dirty) items.push(flag("changes not committed", "Built with changes that were not committed: no commit holds exactly this code."));
-  if (part.unpushed) items.push(flag("not pushed when built", "No remote branch held this commit when the app was built, so its links may not open until it is pushed."));
-  if (part.anotherCopy) items.push(flag("another copy in this build", "The build holds more than one copy of this package, installed in different places, so the app loads its code twice. Listing it in the app's Vite config resolve.dedupe holds one."));
+function partLine(document: Document, part: BuiltFromPart): HTMLElement[] {
+  const items: HTMLElement[] = [el(document, "span", "foss-earth-about__name", part.name)];
+  if (part.version) items.push(el(document, "span", "foss-earth-about__version", part.version));
+  if (part.artifact) items.push(flag(document, `${part.artifact.role} · ${part.artifact.availability}${part.artifact.optional ? " · optional" : ""}`, part.artifact.reason ?? "Availability describes this release artifact; admission is verified by the host."));
+  if (part.dirty) items.push(flag(document, "changes not committed", "Built with changes that were not committed: no commit holds exactly this code."));
+  if (part.unpushed) items.push(flag(document, "not pushed when built", "No remote branch held this commit when the app was built, so its links may not open until it is pushed."));
+  if (part.anotherCopy) items.push(flag(document, "another copy in this build", "The build holds more than one copy of this package, installed in different places, so the app loads its code twice. Listing it in the app's Vite config resolve.dedupe holds one."));
   return items;
 }
 
@@ -109,13 +115,13 @@ function commitsOf(part: BuiltFromPart): ListedCommit[] {
   return history.some(commit => commit.hash === part.commit) ? history : [{ hash: part.commit }, ...history];
 }
 
-function commitList(commits: readonly ListedCommit[], repository: string | undefined, icon: () => SVGSVGElement): HTMLElement {
-  const list = el("ol", "foss-earth-about__history");
+function commitList(document: Document, commits: readonly ListedCommit[], repository: string | undefined, icon: () => SVGSVGElement): HTMLElement {
+  const list = el(document, "ol", "foss-earth-about__history");
   for (const commit of commits) {
-    const item = el("li");
-    item.append(repository ? externalLink(shortCommit(commit.hash), `${repository}/commit/${encodeURIComponent(commit.hash)}`, icon) : commitLabel(commit.hash));
-    if (commit.at) item.append(el("span", "foss-earth-about__when", buildMinute(commit.at)));
-    if (commit.subject) item.append(el("span", "foss-earth-about__subject", commit.subject));
+    const item = el(document, "li");
+    item.append(repository ? externalLink(document, shortCommit(commit.hash), `${repository}/commit/${encodeURIComponent(commit.hash)}`, icon) : commitLabel(document, commit.hash));
+    if (commit.at) item.append(el(document, "span", "foss-earth-about__when", buildMinute(commit.at)));
+    if (commit.subject) item.append(el(document, "span", "foss-earth-about__subject", commit.subject));
     list.append(item);
   }
   return list;
@@ -143,43 +149,45 @@ function whenShown(element: HTMLElement, listener: () => void): () => void {
 export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
   const { builtFrom, identity } = options;
   if (builtFrom !== null && !isBuiltFrom(builtFrom)) throw new Error("Invalid built-from metadata.");
-  const icon = options.externalLinkIcon ?? createExternalLinkIcon;
+  const document = options.document ?? globalThis.document;
+  const observeShown = options.whenShown ?? whenShown;
+  const icon = options.externalLinkIcon ?? (() => createExternalLinkIcon(document));
   let disposed = false;
-  const element = el("div", "foss-earth-about");
+  const element = el(document, "div", "foss-earth-about");
   element.setAttribute("aria-label", "About");
   const stops: (() => void)[] = [];
 
   // ─── The app as it runs ──────────────────────────────────────────
-  const app = el("section", "foss-earth-about__app");
-  app.append(el("h2", "foss-earth-about__title", options.title));
+  const app = el(document, "section", "foss-earth-about__app");
+  app.append(el(document, "h2", "foss-earth-about__title", options.title));
   const built = builtFrom ? builtFrom.built : identity.build;
   const version = builtFrom?.app.version;
-  app.append(el("p", "foss-earth-about__line", builtFrom?.dev
+  app.append(el(document, "p", "foss-earth-about__line", builtFrom?.dev
     ? `${version ? `Version ${version}, served` : "Served"} by a development server, started ${buildMinute(identity.build)}: not a build.`
     : `${version ? `Version ${version}, built` : "Built"} ${buildMinute(built)}.`));
   if (!builtFrom) {
     // A build without the description names its commits only.
-    app.append(el("p", "foss-earth-about__line", `Source: ${identity.source}`));
-    if (identity.fossEarth) app.append(el("p", "foss-earth-about__line", `FOSS Earth: ${identity.fossEarth}`));
+    app.append(el(document, "p", "foss-earth-about__line", `Source: ${identity.source}`));
+    if (identity.fossEarth) app.append(el(document, "p", "foss-earth-about__line", `FOSS Earth: ${identity.fossEarth}`));
   }
-  app.append(el("p", "foss-earth-about__line", `Bundle: ${identity.bundle}`));
+  app.append(el(document, "p", "foss-earth-about__line", `Bundle: ${identity.bundle}`));
   if (options.publishedVersion) {
     const watch = options.publishedVersion;
-    const line = el("p", "foss-earth-about__line");
+    const line = el(document, "p", "foss-earth-about__line");
     line.setAttribute("role", "status");
     const render = (): void => { line.textContent = watch.describe(); };
     render();
     stops.push(watch.subscribe(() => { if (!disposed) render(); }));
-    if (watch.shown) stops.push(whenShown(element, () => { if (!disposed) watch.shown!(); }));
+    if (watch.shown) stops.push(observeShown(element, () => { if (!disposed) watch.shown!(); }));
     app.append(line);
   }
   if (options.latestDeploy) {
     const deploy = options.latestDeploy;
-    const line = el("p", "foss-earth-about__line", `${SITE_DEPLOY_LABEL}: asked when About is shown`);
+    const line = el(document, "p", "foss-earth-about__line", `${SITE_DEPLOY_LABEL}: asked when About is shown`);
     let asked = false;
-    const controller = new AbortController();
+    const controller = options.createAbortController?.() ?? new AbortController();
     stops.push(() => controller.abort());
-    stops.push(whenShown(element, () => {
+    stops.push(observeShown(element, () => {
       if (asked || disposed) return;
       asked = true;
       line.textContent = `${SITE_DEPLOY_LABEL}: asking`;
@@ -193,8 +201,8 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
 
   // ─── What it is built from ───────────────────────────────────────
   if (builtFrom) {
-    element.append(el("h3", "foss-earth-about__heading", "Built from"));
-    element.append(el("p", "foss-earth-about__note", builtFrom.dev
+    element.append(el(document, "h3", "foss-earth-about__heading", "Built from"));
+    element.append(el(document, "p", "foss-earth-about__note", builtFrom.dev
       ? "The packages the app and its checkouts declare: a development server has no bundle to list."
       : "Everything this build holds, under the part that brought it in. Open a part for its commits and links to its source."));
     /** Each part listed in full, by name and version, for "same copy as above" to open. */
@@ -202,18 +210,18 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
     const keyOf = (part: Pick<BuiltFromPart, "name" | "version">): string => `${part.name}@${part.version ?? ""}`;
 
     const renderPart = (part: BuiltFromPart, depth: number): HTMLElement => {
-      const item = el("li", "foss-earth-about__part");
+      const item = el(document, "li", "foss-earth-about__part");
       if (part.listedAbove) {
-        const row = el("div", "foss-earth-about__row");
-        row.append(...partLine(part));
-        const above = el("button", "foss-earth-about__above", "same copy as above");
+        const row = el(document, "div", "foss-earth-about__row");
+        row.append(...partLine(document, part));
+        const above = el(document, "button", "foss-earth-about__above", "same copy as above");
         above.type = "button";
         above.title = "Two parts bring this package in, and the build holds it once. Shows where it is listed in full.";
         above.addEventListener("click", () => {
           const target = full.get(keyOf(part));
           if (!target) return;
           for (let open: HTMLElement | null = target; open && open !== element; open = open.parentElement) {
-            if (open instanceof HTMLDetailsElement) open.open = true;
+            if (open.localName === "details") (open as HTMLDetailsElement).open = true;
           }
           target.scrollIntoView?.({ block: "nearest" });
           target.querySelector<HTMLElement>("summary")?.focus();
@@ -222,31 +230,31 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
         item.append(row);
         return item;
       }
-      const details = el("details", "foss-earth-about__details");
+      const details = el(document, "details", "foss-earth-about__details");
       // The app opens on its parts; the parts open on request.
       details.open = depth === 0;
       full.set(keyOf(part), details);
-      const summary = el("summary", "foss-earth-about__row");
-      summary.append(...partLine(part));
+      const summary = el(document, "summary", "foss-earth-about__row");
+      summary.append(...partLine(document, part));
       details.append(summary);
-      const body = el("div", "foss-earth-about__body");
+      const body = el(document, "div", "foss-earth-about__body");
       const facts: string[] = [];
       if (part.built) facts.push(`Its own build: ${buildMinute(part.built)}.`);
       if (part.from !== "app") facts.push(`${FROM_LABELS[part.from][0].toUpperCase()}${FROM_LABELS[part.from].slice(1)}.`);
-      if (facts.length) body.append(el("p", "foss-earth-about__line", facts.join(" ")));
+      if (facts.length) body.append(el(document, "p", "foss-earth-about__line", facts.join(" ")));
       const links = partLinks(part);
       if (links.length) {
-        const row = el("p", "foss-earth-about__links");
-        row.append(...links.map(link => externalLink(link.label, link.href, icon)));
+        const row = el(document, "p", "foss-earth-about__links");
+        row.append(...links.map(link => externalLink(document, link.label, link.href, icon)));
         body.append(row);
       }
       const commits = commitsOf(part);
       if (commits.length) {
-        body.append(el("p", "foss-earth-about__label", commits.length > 1 ? "Commits, the one it was built from first" : "The commit it was built from"));
-        body.append(commitList(commits, part.repository ? safeExternalUrl(part.repository) ?? undefined : undefined, icon));
+        body.append(el(document, "p", "foss-earth-about__label", commits.length > 1 ? "Commits, the one it was built from first" : "The commit it was built from"));
+        body.append(commitList(document, commits, part.repository ? safeExternalUrl(part.repository) ?? undefined : undefined, icon));
       }
       if (part.parts?.length) {
-        const list = el("ul", "foss-earth-about__parts");
+        const list = el(document, "ul", "foss-earth-about__parts");
         list.append(...part.parts.map(child => renderPart(child, depth + 1)));
         body.append(list);
       }
@@ -254,7 +262,7 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
       item.append(details);
       return item;
     };
-    const tree = el("ul", "foss-earth-about__tree");
+    const tree = el(document, "ul", "foss-earth-about__tree");
     tree.append(renderPart(builtFrom.app, 0));
     element.append(tree);
   }

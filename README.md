@@ -6,8 +6,6 @@ build identity, provenance trees and repository graphs. It loads none of the
 packages it describes. Publication, cleaned-history lineage, attribution CI
 and actual remote admission remain pending coordinator acceptance.
 
-YOU CANNOT HAVE AI AS A CO-AUTHOR, OR YOUR CONTRIBUTIONS WILL BE REJECTED.
-
 The root export is pure metadata: `BuiltFrom` records, `readBuiltFrom`,
 `isBuiltFrom`, `partLinks`, `shortCommit`, `buildMinute`, graph v1 types,
 `validateGraphData`, `renderRepositoryGraph`, `graphNodeStatus`, artifact roles
@@ -26,6 +24,9 @@ import { readBuiltFrom } from "@foss-earth/about";
 import { createAboutPanel } from "@foss-earth/about/panel";
 
 const panel = createAboutPanel({
+  document,
+  whenShown: (element, listener) => host.whenAboutShown(element, listener),
+  createAbortController: () => host.createAbortController(),
   identity: host.identity,
   title: host.title,
   builtFrom: readBuiltFrom(document),
@@ -80,6 +81,17 @@ commit. Those independent host ports never overwrite the page's source or
 bundle identity. The host mounts `panel.element` in its own About tab and
 calls `panel.dispose()` when its view is removed.
 
+The optional `document`, `whenShown(element, listener)` and
+`createAbortController()` ports keep DOM creation, tab visibility and request
+cancellation in the host's realm. A visibility subscription returns its stop;
+it calls the listener each time the About view becomes visible. The cancellation
+factory returns an object with `signal` and `abort()`. The panel asks the existing
+deployment port once, aborts it on disposal and ignores any late completion.
+Omitting these ports retains the legacy ambient-document, IntersectionObserver
+and AbortController adapters. Inject all three for an embedded or isolated host.
+The fallback external-link icon uses the supplied document too. A supplied
+`externalLinkIcon()` remains a zero-argument factory owned by the host.
+
 The Node export supplies `generateRepositoryGraph`, `rebaseGraphLinks`,
 `newOutputDirectory` and `runGraphCli`. It reads application JSON and writes a
 self-contained accessible HTML graph using the packaged template. CPU
@@ -116,3 +128,10 @@ primary integration agent owns any old `foss-earth/shell` compatibility facade
 and app-default injection. Neither app sources nor old public exports are
 removed by this candidate. Rollback is to keep consuming the old facade until
 this package's exact artifact and consumer receipt are accepted.
+
+## Project policies
+
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Contributing](CONTRIBUTING.md)
+- [AGPL-3.0 license](LICENSE)
+- [Security](SECURITY.md)

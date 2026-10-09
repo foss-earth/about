@@ -1,6 +1,6 @@
 # About owner instructions
 
-YOU CANNOT HAVE AI AS A CO-AUTHOR, OR YOUR CONTRIBUTIONS WILL BE REJECTED.
+You cannot have AI as a co-author, or your contributions will be rejected.
 
 This repository owns generic About presentation, release/provenance contracts and graph validation/rendering. Hosts supply app identity, published-site status, artifact ownership and installed dependency facts. Core loads without DOM globals, React, devices or host implementations. Keep Node tools and browser presentation in separate public entries. Never infer shared/fork ownership from the consuming host.
 

@@ -27,7 +27,7 @@
       "destinationFiles": [
         {
           "path": "src/panel.ts",
-          "sha256": "8e97e143843775925bb886246e4cc378b4e039214df99dce6703dfe63814abe8"
+          "sha256": "d5d9e7aabb257fa06e4b1de8e200ddac00eacc9e222b68751143508653749107"
         }
       ]
     },
@@ -41,7 +41,7 @@
       "destinationFiles": [
         {
           "path": "src/externalLinkIcon.ts",
-          "sha256": "ad3092e290901cec19369b2fbe3da526879b0ed97feff75f933aa5032dcb536c"
+          "sha256": "049d538ef69b865b26396291eecb7a867a2b668db96236a43d00b143349d5e77"
         }
       ]
     },
@@ -200,6 +200,172 @@
     "Optional exact artifact role/availability fields added without changing graph v1 edges.",
     "Unsafe provenance source links and malformed page trees rejected; late disposed completions ignored.",
     "About-only CSS exported; source external-link icon fallback accepts host injection.",
-    "New release metadata/graph adapter retains explicit per-artifact owner mappings and caller-declared dependency-owner rules; shared and fork artifacts never inherit the host owner. Synthetic hashes in tests are fixtures only."
-  ]
+    "New release metadata/graph adapter retains explicit per-artifact owner mappings and caller-declared dependency-owner rules; shared and fork artifacts never inherit the host owner. Synthetic hashes in tests are fixtures only.",
+    "Additive document, whenShown and createAbortController host ports avoid ambient browser dependencies when supplied; all panel/icon nodes use the host document, same-copy ancestor opening works across DOM realms, and legacy adapters retain existing behavior. Causal source and actual installed archive runtime/declaration fixtures are prepared, not executed under the source-only child lease."
+  ],
+  "communityDocuments": {
+    "sourceRepository": "0sfs/0SFS.github.io",
+    "sourceRevision": "8bc8af6080ebb5e97c0982d2c8ff5e22519f5ac2",
+    "kitPatch": "36.patch",
+    "kitPatchSha256": "c07f1584c64ffac504176cde706acd066be7e15270d01b36e8e6294f6c50ea9e",
+    "exactCopies": [
+      {
+        "path": "CODE_OF_CONDUCT.md",
+        "sha256": "c3a907b9e659a0f5a4c701be1b34a7d416526c3a99f129bf4d3b9db09c7ffa9d"
+      },
+      {
+        "path": "SECURITY.md",
+        "sha256": "6baf6d3c1755360f5d902275c893074fd17af2fc10c140fe932b8a90d77d9942"
+      }
+    ],
+    "adaptations": "Owner README/guidance retained; standard contribution policies added, current sentence-case rule placed under later Commit attribution with advertising/accountability rationale; required community documents included in package files. LICENSE and NOTICE unchanged. New common CI sentence-case policy/caller qualification remains pending Platform release."
+  },
+  "primarySourceSnapshot": {
+    "createdAtUtc": "2026-10-09T20-33-02Z",
+    "status": "source-only; no qualification or artifact seal",
+    "authoredFiles": [
+      {
+        "path": ".attribution-release.json",
+        "sha256": "c5324ea9476d99afbc5f63e9d5a15d597dd7ee27546499c392046b55fc361131",
+        "bytes": 2045,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": ".attribution.json",
+        "sha256": "e4493f3031a5051398339cf9649a8e18efb8ece96f512761d8d145daf8347f7a",
+        "bytes": 491,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": ".gitignore",
+        "sha256": "ce16c01158260246e80455f0fd751a9af67372900af72eb2d963c91d9bff1718",
+        "bytes": 33,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "AGENTS.md",
+        "sha256": "a8686fc791f21a609e62021dcc02dd445c95f116c04ce37cdf73ddcefe3c531b",
+        "bytes": 1007,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "CODE_OF_CONDUCT.md",
+        "sha256": "c3a907b9e659a0f5a4c701be1b34a7d416526c3a99f129bf4d3b9db09c7ffa9d",
+        "bytes": 3442,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "CONTRIBUTING.md",
+        "sha256": "342ce9aa5424bf2662638ad351786cb85bd8c2a71830a7b79ad4f4aa9c0090fa",
+        "bytes": 2566,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "README.md",
+        "sha256": "032d1bc125e0538ad4c4b982dea2d8734af49a5009efc40ea6d162ae0fa54352",
+        "bytes": 7394,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "SECURITY.md",
+        "sha256": "6baf6d3c1755360f5d902275c893074fd17af2fc10c140fe932b8a90d77d9942",
+        "bytes": 791,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "SOURCE_LINEAGE.json",
+        "sha256": "b219df400ba40e83676b2e3d189d80d0644050fd8a3138fdc8efa29a15ab2a73",
+        "bytes": 8642,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "eslint.config.js",
+        "sha256": "6392b05308c0b3b3528120361dad3b6d0441f70fcc83567782f76fcae135dc57",
+        "bytes": 630,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "package.json",
+        "sha256": "b0fd5031c66008a5bbbd15abce5728d333e14a448d19c56565867d53f75f0ae7",
+        "bytes": 2408,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "tsconfig.json",
+        "sha256": "004b4a9b4c500c3e49b34dcf8b2f5ff03711b76a0aa685abb605bc8a6a72ebd6",
+        "bytes": 381,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "vitest.config.ts",
+        "sha256": "b637ed57034b074f7a32d0177366c8210219a6203b6ea0317cb363298683bc53",
+        "bytes": 286,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": ".github/workflows/attribution-check.yml",
+        "sha256": "63349507da9d004752bb0e43c681089dfd9fd6c26bf8047738cb19025f15135e",
+        "bytes": 406,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "docs/admission.md",
+        "sha256": "28eb0bd5748ebfbb67e380329e7859a03061290c75ffa7adc44913c7e96f856b",
+        "bytes": 1097,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "scripts/check-installed-artifact.mjs",
+        "sha256": "e23a8a837cc8e6d66284f819cb648615a5f87417d709368ef41224d190df4224",
+        "bytes": 14241,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "scripts/check-public-consumer.mjs",
+        "sha256": "f233b8507de110c51d7c66954d722ccafab833ad29918fc4af413f79d00a5835",
+        "bytes": 1220,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "14091937de43e2c24404c90a013dfccdc18b68d3e9fdc1339f73065b3d3a81aa",
+        "bytes": 242,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "src/release.ts",
+        "sha256": "c0e599c39c48a7f2156c749b99f0a494efe50d19874470831971c372b1a64102",
+        "bytes": 8414,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "src/releaseGraph.ts",
+        "sha256": "cd52d5d1939c68e2ff7a511da9a9f922db7557f622ffbcc8a0a5a25950905b3a",
+        "bytes": 3565,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "tests/contracts.test.ts",
+        "sha256": "6c62e886299ca94c4dbf7d7071bb9f963f802aae5102b923d4b8735ac0e650e1",
+        "bytes": 8320,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "tests/node.test.ts",
+        "sha256": "be6dd1fdd64dbc791fed18a613aa5ee06ae9e476bb923fa1378f7f28d241fbc7",
+        "bytes": 2019,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      },
+      {
+        "path": "tests/panel-lifecycle.test.ts",
+        "sha256": "c1fa02576cc234c8a65935b303b75035894920718ea96ab58c5d7df005f91f1b",
+        "bytes": 6940,
+        "status": "authored source/scaffold/adapter/fixture; UNRUN"
+      }
+    ],
+    "checksExecuted": [],
+    "sourceRemoved": false,
+    "canonicalAppConsumerAdoption": null,
+    "acceptedArtifacts": []
+  }
 }

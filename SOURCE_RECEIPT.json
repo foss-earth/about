@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "owner": "foss-earth/about",
+  "preparedAtUtc": "2026-10-09T20-33-02Z",
+  "status": "SOURCE-ONLY current bytes; checks/history/installed consumers/artifacts/adoption/admission UNRUN",
+  "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
+  "priorSourceReceipt": "build/source-only/2026-10-09T20-33-02Z/SOURCE_RECEIPT.json.before",
+  "sourceManifestPath": "build/source-only/2026-10-09T20-33-02Z/source-manifest.json",
+  "sourceManifestEncoding": "UTF-8 sorted path JSON array, indent2, trailing LF; ignored outputs and receipt excluded",
+  "sourceManifestSha256": "10527d06985f5d2df919b88982a153932754b977ad642f128235305e4942e1f0",
+  "sourceFileCount": 40,
+  "provenancePath": "SOURCE_PROVENANCE.json",
+  "provenanceSha256": "a518317b2c9a5246cf0b68bd9654883b7bbe0993b5f72a85aae1d3f08234019a",
+  "publicExports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./panel": {
+      "types": "./dist/panel.d.ts",
+      "import": "./dist/panel.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    },
+    "./panel.css": "./styles/panel.css",
+    "./graph-template.html": "./templates/repository-graph.html"
+  },
+  "bins": {
+    "foss-earth-repository-graph": "./dist/cli.js"
+  },
+  "sourceFiles": [
+    {
+      "path": ".attribution-release.json",
+      "sha256": "c5324ea9476d99afbc5f63e9d5a15d597dd7ee27546499c392046b55fc361131",
+      "bytes": 2045
+    },
+    {
+      "path": ".attribution.json",
+      "sha256": "e4493f3031a5051398339cf9649a8e18efb8ece96f512761d8d145daf8347f7a",
+      "bytes": 491
+    },
+    {
+      "path": ".github/workflows/attribution-check.yml",
+      "sha256": "63349507da9d004752bb0e43c681089dfd9fd6c26bf8047738cb19025f15135e",
+      "bytes": 406
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "ce16c01158260246e80455f0fd751a9af67372900af72eb2d963c91d9bff1718",
+      "bytes": 33
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "a8686fc791f21a609e62021dcc02dd445c95f116c04ce37cdf73ddcefe3c531b",
+      "bytes": 1007
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "sha256": "c3a907b9e659a0f5a4c701be1b34a7d416526c3a99f129bf4d3b9db09c7ffa9d",
+      "bytes": 3442
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "342ce9aa5424bf2662638ad351786cb85bd8c2a71830a7b79ad4f4aa9c0090fa",
+      "bytes": 2566
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "bytes": 34523
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "323da85db96d02ed0cf48db889efa184037f538f002e868aeeff396ebb44a993",
+      "bytes": 359
+    },
+    {
+      "path": "README.md",
+      "sha256": "032d1bc125e0538ad4c4b982dea2d8734af49a5009efc40ea6d162ae0fa54352",
+      "bytes": 7394
+    },
+    {
+      "path": "SECURITY.md",
+      "sha256": "6baf6d3c1755360f5d902275c893074fd17af2fc10c140fe932b8a90d77d9942",
+      "bytes": 791
+    },
+    {
+      "path": "SOURCE_LINEAGE.json",
+      "sha256": "b219df400ba40e83676b2e3d189d80d0644050fd8a3138fdc8efa29a15ab2a73",
+      "bytes": 8642
+    },
+    {
+      "path": "SOURCE_PROVENANCE.json",
+      "sha256": "a518317b2c9a5246cf0b68bd9654883b7bbe0993b5f72a85aae1d3f08234019a",
+      "bytes": 14446
+    },
+    {
+      "path": "docs/admission.md",
+      "sha256": "28eb0bd5748ebfbb67e380329e7859a03061290c75ffa7adc44913c7e96f856b",
+      "bytes": 1097
+    },
+    {
+      "path": "eslint.config.js",
+      "sha256": "6392b05308c0b3b3528120361dad3b6d0441f70fcc83567782f76fcae135dc57",
+      "bytes": 630
+    },
+    {
+      "path": "package.json",
+      "sha256": "b0fd5031c66008a5bbbd15abce5728d333e14a448d19c56565867d53f75f0ae7",
+      "bytes": 2408
+    },
+    {
+      "path": "scripts/build-repository-graph.mjs",
+      "sha256": "7c3b8e2924ebc7f083a2cdb7d247555e83b4e6c382838abeb9bf02b9d8af2967",
+      "bytes": 427
+    },
+    {
+      "path": "scripts/check-installed-artifact.mjs",
+      "sha256": "e23a8a837cc8e6d66284f819cb648615a5f87417d709368ef41224d190df4224",
+      "bytes": 14241
+    },
+    {
+      "path": "scripts/check-public-consumer.mjs",
+      "sha256": "f233b8507de110c51d7c66954d722ccafab833ad29918fc4af413f79d00a5835",
+      "bytes": 1220
+    },
+    {
+      "path": "scripts/lib/outputDirectory.mjs",
+      "sha256": "854f51ed31baa8b98d46bfeaa219e43a1299ef380157b94c874dfbfd5eb49e9a",
+      "bytes": 157
+    },
+    {
+      "path": "src/builtFrom.ts",
+      "sha256": "d8a65f250f104367c0f356ee9da203d91c8dd073c75c5d49efe9a0549cd57dce",
+      "bytes": 6975
+    },
+    {
+      "path": "src/cli.ts",
+      "sha256": "6a28ebcab406172bd19b26563db9c323218c49dbc937e2fb7c8c1523339bcc72",
+      "bytes": 76
+    },
+    {
+      "path": "src/externalLinkIcon.ts",
+      "sha256": "049d538ef69b865b26396291eecb7a867a2b668db96236a43d00b143349d5e77",
+      "bytes": 1004
+    },
+    {
+      "path": "src/graph.ts",
+      "sha256": "5cfebca78e07f482ef632a0fd905b9aa97fa92d8d6a087935789d1563e5436b8",
+      "bytes": 10696
+    },
+    {
+      "path": "src/identity.ts",
+      "sha256": "41b6f2674c254e8c42f3629cd4fdb27628409a60db356d7376d4cf48b8549f9b",
+      "bytes": 902
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "14091937de43e2c24404c90a013dfccdc18b68d3e9fdc1339f73065b3d3a81aa",
+      "bytes": 242
+    },
+    {
+      "path": "src/node.ts",
+      "sha256": "ffd90ff8da63341a00eab701b9f0dff0bde9cabe0456cebc152edb75765202f5",
+      "bytes": 4150
+    },
+    {
+      "path": "src/outputDirectory.ts",
+      "sha256": "aa0b3e95407d4c561e540cb637def2dec8fd6ab4f70aaeafbb69198ceb5e230d",
+      "bytes": 1163
+    },
+    {
+      "path": "src/panel.ts",
+      "sha256": "d5d9e7aabb257fa06e4b1de8e200ddac00eacc9e222b68751143508653749107",
+      "bytes": 13909
+    },
+    {
+      "path": "src/release.ts",
+      "sha256": "c0e599c39c48a7f2156c749b99f0a494efe50d19874470831971c372b1a64102",
+      "bytes": 8414
+    },
+    {
+      "path": "src/releaseGraph.ts",
+      "sha256": "cd52d5d1939c68e2ff7a511da9a9f922db7557f622ffbcc8a0a5a25950905b3a",
+      "bytes": 3565
+    },
+    {
+      "path": "styles/panel.css",
+      "sha256": "dfb555e7eac9950e90e81685379cdb81ccabb4f95143b73be45fbaa469981193",
+      "bytes": 3526
+    },
+    {
+      "path": "templates/repository-graph.html",
+      "sha256": "87266d51b331139bc5e74e633a06a0ed513a38ae2db0e35287ebfa15e9cc721e",
+      "bytes": 25730
+    },
+    {
+      "path": "tests/contracts.test.ts",
+      "sha256": "6c62e886299ca94c4dbf7d7071bb9f963f802aae5102b923d4b8735ac0e650e1",
+      "bytes": 8320
+    },
+    {
+      "path": "tests/graph.test.mjs",
+      "sha256": "0f001e387fb0ee34ad961e61755c3fda024a06fec9559140864648be7138d492",
+      "bytes": 3160
+    },
+    {
+      "path": "tests/node.test.ts",
+      "sha256": "be6dd1fdd64dbc791fed18a613aa5ee06ae9e476bb923fa1378f7f28d241fbc7",
+      "bytes": 2019
+    },
+    {
+      "path": "tests/panel-lifecycle.test.ts",
+      "sha256": "c1fa02576cc234c8a65935b303b75035894920718ea96ab58c5d7df005f91f1b",
+      "bytes": 6940
+    },
+    {
+      "path": "tests/panel.test.ts",
+      "sha256": "75c6366241067e9b7c922e105952721307e53edfebc55b95c25ffb6a25d833de",
+      "bytes": 10431
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "004b4a9b4c500c3e49b34dcf8b2f5ff03711b76a0aa685abb605bc8a6a72ebd6",
+      "bytes": 381
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "b637ed57034b074f7a32d0177366c8210219a6203b6ea0317cb363298683bc53",
+      "bytes": 286
+    }
+  ],
+  "frozenFoundation": null,
+  "sharedCi": {
+    "revision": "9e046dd482e0229dc7c7b2d71b079d5905664656",
+    "archiveSha256": "450ede699f55f9b9c78146eadb73de7c6297e56553e7d7f9e5b164786a7beb24",
+    "policySha256": "9ca88bf5861685e22e65e5f39fa65b05faaf9c218875fccbecce1b9f2dca5bd3",
+    "callerSha256": "63349507da9d004752bb0e43c681089dfd9fd6c26bf8047738cb19025f15135e",
+    "installedConformance": null,
+    "fullIntendedRefAudit": null,
+    "actualRemoteAdmissionVerified": false,
+    "docsOnlyMetadataSkipped": false
+  },
+  "checksExecuted": [],
+  "currentArtifact": null,
+  "acceptedArtifacts": [],
+  "actualConsumerAdoption": null,
+  "rollback": "Canonical original application remains live; frozen prior artifacts and earlier exact source receipts retained. New source has not replaced or retired any consumer.",
+  "outstandingBlockers": [
+    "granted bounded owner and actual public-only consumer checks",
+    "exact replacement prerequisites",
+    "source/API/CSS link/asset compatibility",
+    "expanded clean lineage and actual complete intended publication scopes",
+    "actual installed CI conformance",
+    "final source/archive/export seals",
+    "actual app adoption",
+    "coordinator public transport and remote admission"
+  ],
+  "policySentence": "You cannot have AI as a co-author, or your contributions will be rejected."
+}

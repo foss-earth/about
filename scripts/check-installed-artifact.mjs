@@ -15,6 +15,29 @@ writeFileSync(resolverPath, "export const resolvePublic = name => import.meta.re
 const { resolvePublic } = await import(pathToFileURL(resolverPath));
 // Prepare the separately installed jsdom tool before guarding the artifact's file imports.
 const dom = new JSDOM("<!doctype html><html><head></head><body><main></main></body></html>", { url: "https://example.invalid/tour" });
+const compiler = fileURLToPath(import.meta.resolve("typescript/bin/tsc"));
+const declarationFixture = path.join(consumer, "about-host-ports.mts");
+writeFileSync(declarationFixture, `import { createAboutPanel, type AboutPanelOptions } from "@foss-earth/about/panel";
+declare const document: Document;
+declare const signal: AbortSignal;
+const options: AboutPanelOptions = {
+  document,
+  whenShown(element, listener) { element.ownerDocument.createElement("span"); listener(); return () => {}; },
+  createAbortController: () => ({ signal, abort() {} }),
+  title: "Installed host",
+  identity: { build: "2026-10-09T00:00:00Z", source: "host-source", bundle: "host.js" },
+  builtFrom: null,
+  latestDeploy: { async read(deploymentSignal) { const aborted: boolean = deploymentSignal.aborted; return aborted ? null : "a".repeat(40); } },
+  externalLinkIcon: () => document.createElementNS("http://www.w3.org/2000/svg", "svg"),
+};
+const panel = createAboutPanel(options);
+const element: HTMLElement = panel.element;
+element.remove(); panel.dispose();
+`);
+const declarationConfig = path.join(consumer, "about-host-ports.tsconfig.json");
+writeFileSync(declarationConfig, JSON.stringify({ compilerOptions: { target: "ES2022", module: "NodeNext", moduleResolution: "NodeNext", lib: ["ES2022", "DOM"], types: [], strict: true, noEmit: true, skipLibCheck: false }, files: ["about-host-ports.mts"] }, null, 2) + "\n");
+const declarationCheck = spawnSync(process.execPath, [compiler, "--project", declarationConfig], { cwd: consumer, encoding: "utf8" });
+assert.equal(declarationCheck.status, 0, declarationCheck.stdout + declarationCheck.stderr);
 const consumerUrl = pathToFileURL(consumer + path.sep).href;
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -49,6 +72,58 @@ const releaseGraph = core.graphFromReleaseManifest(releaseManifest, { owner: "UM
 assert.deepEqual(releaseGraph.nodes.map(node => node.owner), ["UMN-VR", "foss-earth", "Felipegalind0"]);
 assert.equal(releaseGraph.nodes[2].artifact.provenance.sourceRepository, "upstream/example");
 
+// Exercise explicit host ports while all equivalent ambient ports are forbidden.
+const hostController = new dom.window.AbortController();
+const visibleCallbacks = [];
+let visibilityStops = 0, publicationStops = 0, shownCalls = 0, deployReads = 0, cancellationFactories = 0, finishInjectedDeploy;
+const injectedDeployPromise = new Promise(resolvePromise => { finishInjectedDeploy = resolvePromise; });
+const ambientNames = ["window", "document", "IntersectionObserver", "AbortController", "HTMLDetailsElement", "fetch"];
+const ambientDescriptors = ambientNames.map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]);
+for (const name of ambientNames) Object.defineProperty(globalThis, name, { configurable: true, get() { throw new Error(`Injected panel read ambient ${name}`); } });
+try {
+  const injected = panelModule.createAboutPanel({
+    document: dom.window.document,
+    whenShown: (element, listener) => { assert.equal(element.ownerDocument, dom.window.document); visibleCallbacks.push(listener); return () => { visibilityStops++; }; },
+    createAbortController: () => { cancellationFactories++; return hostController; },
+    title: "Injected realm",
+    identity: { build: "2026-10-09T00:00:00Z", source: "host-source", bundle: "host.js" },
+    builtFrom: { built: "2026-10-09T00:00:00Z", app: { name: "host", from: "app", commit: "a".repeat(40), repository: "https://example.org/host", parts: [
+      { name: "shared", version: "1", from: "file", commit: "b".repeat(40), repository: "https://example.org/shared" },
+      { name: "shared", version: "1", from: "file", listedAbove: true },
+    ] } },
+    publishedVersion: { describe: () => "Injected publication", subscribe: () => () => { publicationStops++; }, shown: () => { shownCalls++; } },
+    latestDeploy: { read: signal => { assert.equal(signal, hostController.signal); deployReads++; return injectedDeployPromise; } },
+  });
+  dom.window.document.querySelector("main").append(injected.element);
+  assert.equal(injected.element.ownerDocument, dom.window.document);
+  assert.ok([...injected.element.querySelectorAll("*")].every(element => element.ownerDocument === dom.window.document));
+  assert.ok(injected.element.querySelector("svg"));
+  const sharedDetails = injected.element.querySelectorAll("details")[1];
+  assert.equal(sharedDetails.open, false);
+  injected.element.querySelector(".foss-earth-about__above").click();
+  assert.equal(sharedDetails.open, true);
+  assert.equal(visibleCallbacks.length, 2); assert.equal(deployReads, 0);
+  for (const callback of visibleCallbacks) callback();
+  await new Promise(resolvePromise => { setImmediate(resolvePromise); });
+  assert.equal(shownCalls, 1); assert.equal(deployReads, 1); assert.equal(cancellationFactories, 1);
+  for (const callback of visibleCallbacks) callback();
+  assert.equal(deployReads, 1);
+  const injectedText = injected.element.textContent;
+  injected.dispose(); injected.dispose();
+  assert.equal(visibilityStops, 2); assert.equal(publicationStops, 1); assert.equal(hostController.signal.aborted, true);
+  for (const callback of visibleCallbacks) callback();
+  assert.equal(shownCalls, 2);
+  finishInjectedDeploy("c".repeat(40));
+  await new Promise(resolvePromise => { setImmediate(resolvePromise); });
+  assert.equal(injected.element.textContent, injectedText);
+  injected.element.remove();
+} finally {
+  for (const [name, descriptor] of ambientDescriptors) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
+}
+
 Object.assign(globalThis, { document: dom.window.document, window: dom.window, HTMLDetailsElement: dom.window.HTMLDetailsElement });
 const listeners = new Set();
 let describe = "Published site status supplied by its host", finishDeploy;
@@ -81,6 +156,6 @@ const packageDirectory = path.dirname(path.dirname(resolve("@foss-earth/about"))
 const manifest = JSON.parse(readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
 for (const name of [".", "./panel", "./node"]) assert.ok(readFileSync(path.join(packageDirectory, manifest.exports[name].types), "utf8").length);
 hooks.deregister();
-const receipt = { package: manifest.name, version: manifest.version, artifact: path.basename(artifact), sha256: createHash("sha256").update(readFileSync(artifact)).digest("hex"), node: process.version, installedEntries: [".", "./panel", "./node", "./panel.css", "./graph-template.html"], pureImport: true, isolatedFileResolution: true, outsideImportRejected: true, injectedPanelLifecycle: true, disposedAsyncCompletionIgnored: true, explicitArtifactOwnership: true, distinctSourceProvenance: true, graphCli: true, declarations: true, sourceRevision: manifest.fossEarthSplit.sourceRevision, publication: "unaccepted local staging candidate; no destination commit or remote admission asserted" };
+const receipt = { package: manifest.name, version: manifest.version, artifact: path.basename(artifact), sha256: createHash("sha256").update(readFileSync(artifact)).digest("hex"), node: process.version, installedEntries: [".", "./panel", "./node", "./panel.css", "./graph-template.html"], pureImport: true, isolatedFileResolution: true, outsideImportRejected: true, injectedPanelLifecycle: true, injectedDocumentVisibilityCancellation: true, ambientPanelPortsRejected: true, installedStrictHostPortDeclarations: true, disposedAsyncCompletionIgnored: true, explicitArtifactOwnership: true, distinctSourceProvenance: true, graphCli: true, declarations: true, sourceRevision: manifest.fossEarthSplit.sourceRevision, publication: "unaccepted local staging candidate; no destination commit or remote admission asserted" };
 writeFileSync(path.join(consumer, "receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
 process.stdout.write(JSON.stringify(receipt) + "\n");
