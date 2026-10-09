@@ -1,0 +1,65 @@
+{
+  "name": "@foss-earth/about",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Host-supplied build provenance and repository graph presentation",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": [
+    "./styles/panel.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./panel": {
+      "types": "./dist/panel.d.ts",
+      "import": "./dist/panel.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    },
+    "./panel.css": "./styles/panel.css",
+    "./graph-template.html": "./templates/repository-graph.html"
+  },
+  "bin": {
+    "foss-earth-repository-graph": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "styles",
+    "templates",
+    "scripts",
+    "LICENSE",
+    "SOURCE_PROVENANCE.json",
+    "README.md",
+    "docs",
+    "src",
+    "tsconfig.json",
+    "NOTICE",
+    "SOURCE_LINEAGE.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json --incremental --tsBuildInfoFile node_modules/.tmp/build.tsbuildinfo",
+    "typecheck": "tsc -p tsconfig.json --noEmit --incremental --tsBuildInfoFile node_modules/.tmp/typecheck.tsbuildinfo",
+    "test": "vitest run --maxWorkers=50%",
+    "ci": "npm run lint && npm run typecheck && npm test && npm run build && node scripts/check-public-consumer.mjs",
+    "lint": "eslint . --cache --cache-strategy content --cache-location node_modules/.cache/eslint/"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4",
+    "jsdom": "29.1.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.6",
+    "@eslint/js": "9.39.4",
+    "eslint": "9.39.4",
+    "typescript-eslint": "8.59.3",
+    "globals": "17.6.0"
+  },
+  "fossEarthSplit": {
+    "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
+    "admission": "pending pinned foss-earth/ci caller, shared conformance and coordinator lineage acceptance"
+  }
+}

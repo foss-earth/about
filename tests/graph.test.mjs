@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rebaseGraphLinks, renderRepositoryGraph, validateGraphData } from "./build-repository-graph.mjs";
+import { rebaseGraphLinks, renderRepositoryGraph, validateGraphData } from "../src/node.ts";
 
 function fixture() {
   return {
@@ -49,5 +49,12 @@ describe("application-owned repository graph generation", () => {
     const data = fixture();
     data.owner = data.scope.owner = "../outside";
     expect(() => validateGraphData(data)).toThrow("safe organization label");
+  });
+
+  it("rejects executable documentation links and hidden extra metadata", () => {
+    for (const sourceDocument of ["javascript:alert(1)", " javascript:alert(1)", "\\\\example.org/graph", "/private/graph"]) {
+      expect(() => validateGraphData({ ...fixture(), sourceDocument })).toThrow("local documentation link");
+    }
+    expect(() => validateGraphData({ ...fixture(), token: "secret" })).toThrow("Unrecognized graph field");
   });
 });

@@ -103,8 +103,8 @@
   <header>
     <p class="eyebrow">__GRAPH_OWNER__ / architecture workshop</p>
     <h1>__GRAPH_TITLE__</h1>
-    <p class="intro"><span class="badge plan-badge">PROPOSED · NOT LIVE</span>__GRAPH_SUMMARY__ Select a repository to trace what it consumes and who consumes it.</p>
-    <p class="intro">Owned by <strong>__GRAPH_OWNER__</strong> · proposal dated __GRAPH_DATE__. <a href="__SOURCE_URL__">__SOURCE_LABEL__</a> · <a href="__DATA_URL__">authoritative graph data</a>. This is not an audit of today’s imports. The shared viewer belongs to <strong>foss-earth/about</strong>; each application owns its own manifest and graph content.</p>
+    <p class="intro"><span class="badge plan-badge">__GRAPH_STATUS_BADGE__</span>__GRAPH_SUMMARY__ Select a repository to trace what it consumes and who consumes it.</p>
+    <p class="intro">Owned by <strong>__GRAPH_OWNER__</strong> · __GRAPH_DATE_KIND__ __GRAPH_DATE__. <a href="__SOURCE_URL__">__SOURCE_LABEL__</a> · <a href="__DATA_URL__">authoritative graph data</a>. __GRAPH_NOTICE__ The shared viewer belongs to <strong>foss-earth/about</strong>; each application owns its own manifest and graph content.</p>
     <nav class="row" aria-label="Other applications’ graphs">__RELATED_LINKS__</nav>
   </header>
 
@@ -130,7 +130,7 @@
     <span class="key"><i class="role consumer" aria-hidden="true"></i>Its consumers</span>
   </div>
 
-  <section class="graph-shell" aria-label="Proposed repository graph">
+  <section class="graph-shell" aria-label="__GRAPH_LABEL__">
     <div class="graph-bar"><p id="graph-status" role="status" aria-live="polite">Ownership overview. Select a repository to reveal its immediate relations.</p><span id="counts"></span></div>
     <div class="viewport" id="viewport" tabindex="0" aria-label="Repository diagram. Scroll to pan; use Tab to visit nodes. The text index below offers the same information.">
       <div id="canvas-space" class="canvas-space"><div id="stage" class="stage"><svg id="wires" class="wires" aria-hidden="true"></svg><div id="groups" class="groups"></div></div></div>
@@ -153,7 +153,7 @@
     <div id="text-index"></div>
   </details>
   <noscript><section class="selection"><h2>Static repository index</h2><p>The controls need JavaScript; all graph content below is available without it.</p>__STATIC_INDEX__</section></noscript>
-  <footer>“Existing repository” identifies a current checkout, not completed extraction or qualification. Proposed relations are design choices to review. Optional engine profiles and media hosting remain proposed. Opening this file does not create repositories, load runtime packages or contact any service.</footer>
+  <footer>__GRAPH_FOOTER__</footer>
 </main>
 <script id="graph-data" type="application/json">__GRAPH_DATA__</script>
 <script>
@@ -170,7 +170,8 @@
   let renderedIndexKey = null;
   const kinds = { code:"Code / contract", content:"Content / metadata", reference:"Publication / research / tooling" };
   const text = (tag,value,className) => { const element=document.createElement(tag); element.textContent=value; if(className)element.className=className; return element; };
-  const visibleNode = node => state.optional || !node.optional;
+  const visibleNode = node => state.optional || !(node.optional || node.artifact?.optional);
+  const nodeStatus = node => node.artifact ? `${node.artifact.role} artifact · ${node.artifact.availability}${node.artifact.optional ? " · optional" : ""}` : node.kind==="contract"?"Proposed contract · not a repo":node.optional?"Optional proposed repository":node.existing?"Existing repo · proposed boundary":"Planned repo · not extracted";
   const visibleEdges = () => edges.filter(edge => state[edge.type] && visibleNode(byId.get(edge.from)) && visibleNode(byId.get(edge.to)));
   const badge = value => text("span",value,"badge");
   function choose(id,focus=false) { state.selected=id || null; $("repository").value=id || ""; render(); if(focus) $("selection-title").scrollIntoView({block:"nearest",behavior:"auto"}); }
@@ -182,9 +183,9 @@
     const optionGroup=document.createElement("optgroup"); optionGroup.label=group.title;
     nodes.filter(node=>node.group===group.id).forEach(node=>{
       const button=document.createElement("button"); button.type="button"; button.className="node"+(node.kind==="contract"?" contract":""); button.dataset.id=node.id; button.dataset.repo=node.name;
-      button.setAttribute("aria-label",`${node.name}. Owner ${node.owner}. ${node.tab}. ${node.existing?"Existing repository, proposed architecture":node.kind==="contract"?"Proposed data contract":"Proposed repository"}.`);
+      button.setAttribute("aria-label",`${node.name}. Owner ${node.owner}. ${node.tab}. ${nodeStatus(node)}.`);
       button.append(text("span",node.name,"node-name"));
-      const meta=document.createElement("span"); meta.className="node-meta"; meta.append(text("span",node.owner)); meta.append(text("span",node.kind==="contract"?"DATA CONTRACT":node.optional?"OPTIONAL":node.existing?"EXISTING REPO":"PLANNED REPO"));
+      const meta=document.createElement("span"); meta.className="node-meta"; meta.append(text("span",node.owner)); meta.append(text("span",node.artifact?nodeStatus(node):node.kind==="contract"?"DATA CONTRACT":node.optional?"OPTIONAL":node.existing?"EXISTING REPO":"PLANNED REPO"));
       button.append(meta); button.addEventListener("click",()=>choose(node.id)); buttons.set(node.id,button); set.append(button);
       const option=text("option",node.name); option.value=node.id; optionGroup.append(option);
     });
@@ -192,7 +193,7 @@
   });
   function renderRelations(list,relations,incoming=false) {
     list.replaceChildren();
-    if(!relations.length) { list.append(text("li",state.selected?"No relations of the selected types in this proposal.":"Select a repository to see its relations.","empty")); return; }
+    if(!relations.length) { list.append(text("li",state.selected?"No relations of the selected types in this graph.":"Select a repository to see its relations.","empty")); return; }
     relations.forEach(edge=>{ const li=document.createElement("li"); li.append(repoButton(incoming?edge.from:edge.to),text("span",edge.label || kinds[edge.type],"relation-type "+edge.type),text("div",edge.reason,"reason")); list.append(li); });
   }
   function renderIndex(allEdges) {
@@ -231,7 +232,7 @@
     $("selection-title").textContent=node?node.name:"A clear home for every feature";
     $("selection-description").textContent=node?node.detail:"The overview groups repositories by responsibility. Selecting one shows only its immediate relations, keeping the graph readable. All arrows point from a consumer to what it depends on.";
     $("selection-meta").replaceChildren();
-    if(node) $("selection-meta").append(badge(node.owner),badge(node.tab),badge(node.kind==="contract"?"Proposed contract · not a repo":node.optional?"Optional proposed repository":node.existing?"Existing repo · proposed boundary":"Planned repo · not extracted"));
+    if(node) $("selection-meta").append(badge(node.owner),badge(node.tab),badge(nodeStatus(node)));
     $("selection-note").textContent=node && node.note?node.note:graphData.ownershipNote || "The code graph is intended to stay acyclic. Content, build metadata, documentation and research are separate relations; showing them does not turn them into runtime imports.";
     const outward=allEdges.filter(edge=>edge.from===state.selected); const inward=allEdges.filter(edge=>edge.to===state.selected);
     renderRelations($("dependencies"),outward); renderRelations($("consumers"),inward,true);

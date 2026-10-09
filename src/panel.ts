@@ -1,7 +1,6 @@
-import { buildMinute, getAppIdentity, type AppIdentity } from "../app/appIdentity";
-import { partLinks, readBuiltFrom, shortCommit, type BuiltFrom, type BuiltFromCommit, type BuiltFromPart } from "../app/builtFrom";
-import { describePublishedVersion, type PublishedVersionWatch } from "../app/publishedVersion";
-import { createExternalLinkIcon } from "./externalLinkIcon";
+import { buildMinute, type AppIdentity } from "./identity.js";
+import { isBuiltFrom, partLinks, safeExternalUrl, shortCommit, type BuiltFrom, type BuiltFromCommit, type BuiltFromPart } from "./builtFrom.js";
+import { createExternalLinkIcon } from "./externalLinkIcon.js";
 
 /**
  * The About tab: which version of the app runs, and everything it is built
@@ -15,23 +14,28 @@ import { createExternalLinkIcon } from "./externalLinkIcon";
  * that page was built from.
  */
 
+/** The host owns published-version checks, scheduling and their wording. */
+export interface PublishedVersionDisplayPort {
+  describe(): string;
+  subscribe(listener: () => void): () => void;
+  /** Called only when About becomes visible; no implicit package polling. */
+  shown?(): void;
+}
+
+/** The host owns the transport and repository for its site's latest deployment. */
+export interface LatestDeployPort {
+  read(signal: AbortSignal): Promise<string | null>;
+}
+
 export interface AboutPanelOptions {
-  /** What the page says it was built from, read from the page by default; null for a page built without the builtFrom plugin. */
-  builtFrom?: BuiltFrom | null;
-  /** The build as the app's config names it, for a page without the description, and its bundle; the running app's by default. */
-  identity?: AppIdentity;
-  /** The app's name as people know it; the page's title by default. */
-  title?: string;
-  /** Whether this page is the version the site publishes, where the app asks (publishedVersion.ts). */
-  publishedVersion?: Pick<PublishedVersionWatch, "state" | "subscribe" | "now">;
-  /**
-   * The site's GitHub repository, "owner/name", whose gh-pages branch is its
-   * latest deploy. Asked of GitHub the first time About is shown: it is the
-   * site's, not this page's, which may be older.
-   */
-  site?: string;
-  /** How GitHub is asked; `fetch` by default. */
-  fetch?: typeof fetch;
+  /** Explicit page-owned data; pass readBuiltFrom(document) in the host if desired. */
+  builtFrom: BuiltFrom | null;
+  identity: AppIdentity;
+  title: string;
+  publishedVersion?: PublishedVersionDisplayPort;
+  latestDeploy?: LatestDeployPort;
+  /** UI can supply its canonical icon when available. */
+  externalLinkIcon?: () => SVGSVGElement;
 }
 
 export interface AboutPanelHandle {
@@ -49,12 +53,13 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return element;
 }
 
-function externalLink(label: string, href: string): HTMLAnchorElement {
+function externalLink(label: string, href: string, icon: () => SVGSVGElement): HTMLAnchorElement {
   const link = el("a", "foss-earth-about__link");
-  link.href = href;
+  const safe = safeExternalUrl(href);
+  if (safe) link.href = safe;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.append(label, createExternalLinkIcon());
+  link.append(label, icon());
   return link;
 }
 
@@ -82,6 +87,7 @@ const FROM_LABELS: Record<BuiltFromPart["from"], string> = {
 function partLine(part: BuiltFromPart): HTMLElement[] {
   const items: HTMLElement[] = [el("span", "foss-earth-about__name", part.name)];
   if (part.version) items.push(el("span", "foss-earth-about__version", part.version));
+  if (part.artifact) items.push(flag(`${part.artifact.role} · ${part.artifact.availability}${part.artifact.optional ? " · optional" : ""}`, part.artifact.reason ?? "Availability describes this release artifact; admission is verified by the host."));
   if (part.dirty) items.push(flag("changes not committed", "Built with changes that were not committed: no commit holds exactly this code."));
   if (part.unpushed) items.push(flag("not pushed when built", "No remote branch held this commit when the app was built, so its links may not open until it is pushed."));
   if (part.anotherCopy) items.push(flag("another copy in this build", "The build holds more than one copy of this package, installed in different places, so the app loads its code twice. Listing it in the app's Vite config resolve.dedupe holds one."));
@@ -103,11 +109,11 @@ function commitsOf(part: BuiltFromPart): ListedCommit[] {
   return history.some(commit => commit.hash === part.commit) ? history : [{ hash: part.commit }, ...history];
 }
 
-function commitList(commits: readonly ListedCommit[], repository: string | undefined): HTMLElement {
+function commitList(commits: readonly ListedCommit[], repository: string | undefined, icon: () => SVGSVGElement): HTMLElement {
   const list = el("ol", "foss-earth-about__history");
   for (const commit of commits) {
     const item = el("li");
-    item.append(repository ? externalLink(shortCommit(commit.hash), `${repository}/commit/${commit.hash}`) : commitLabel(commit.hash));
+    item.append(repository ? externalLink(shortCommit(commit.hash), `${repository}/commit/${encodeURIComponent(commit.hash)}`, icon) : commitLabel(commit.hash));
     if (commit.at) item.append(el("span", "foss-earth-about__when", buildMinute(commit.at)));
     if (commit.subject) item.append(el("span", "foss-earth-about__subject", commit.subject));
     list.append(item);
@@ -134,16 +140,18 @@ function whenShown(element: HTMLElement, listener: () => void): () => void {
   return () => observer.disconnect();
 }
 
-export function createAboutPanel(options: AboutPanelOptions = {}): AboutPanelHandle {
-  const builtFrom = options.builtFrom === undefined ? readBuiltFrom(document) : options.builtFrom;
-  const identity = options.identity ?? getAppIdentity();
+export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
+  const { builtFrom, identity } = options;
+  if (builtFrom !== null && !isBuiltFrom(builtFrom)) throw new Error("Invalid built-from metadata.");
+  const icon = options.externalLinkIcon ?? createExternalLinkIcon;
+  let disposed = false;
   const element = el("div", "foss-earth-about");
   element.setAttribute("aria-label", "About");
   const stops: (() => void)[] = [];
 
   // ─── The app as it runs ──────────────────────────────────────────
   const app = el("section", "foss-earth-about__app");
-  app.append(el("h2", "foss-earth-about__title", options.title || document.title || builtFrom?.app.name || "This app"));
+  app.append(el("h2", "foss-earth-about__title", options.title));
   const built = builtFrom ? builtFrom.built : identity.build;
   const version = builtFrom?.app.version;
   app.append(el("p", "foss-earth-about__line", builtFrom?.dev
@@ -159,27 +167,25 @@ export function createAboutPanel(options: AboutPanelOptions = {}): AboutPanelHan
     const watch = options.publishedVersion;
     const line = el("p", "foss-earth-about__line");
     line.setAttribute("role", "status");
-    const render = (): void => { line.textContent = describePublishedVersion(watch.state(), watch.now()); };
+    const render = (): void => { line.textContent = watch.describe(); };
     render();
-    stops.push(watch.subscribe(render));
+    stops.push(watch.subscribe(() => { if (!disposed) render(); }));
+    if (watch.shown) stops.push(whenShown(element, () => { if (!disposed) watch.shown!(); }));
     app.append(line);
   }
-  if (options.site) {
-    const site = options.site;
-    const line = el("p", "foss-earth-about__line", `${SITE_DEPLOY_LABEL}: asked of GitHub when About is shown`);
+  if (options.latestDeploy) {
+    const deploy = options.latestDeploy;
+    const line = el("p", "foss-earth-about__line", `${SITE_DEPLOY_LABEL}: asked when About is shown`);
     let asked = false;
+    const controller = new AbortController();
+    stops.push(() => controller.abort());
     stops.push(whenShown(element, () => {
-      if (asked) return;
+      if (asked || disposed) return;
       asked = true;
-      line.textContent = `${SITE_DEPLOY_LABEL}: asking GitHub`;
-      void (options.fetch ?? fetch)(`https://api.github.com/repos/${site}/git/ref/heads/gh-pages`, { cache: "no-store" })
-        .then(response => (response.ok ? response.json() as Promise<{ object?: { sha?: unknown } }> : null))
-        .then(payload => (typeof payload?.object?.sha === "string" ? payload.object.sha : null))
-        .catch(() => null)
-        .then(sha => {
-          // The site's, asked of GitHub now: a page a browser kept from before shows this deploy too, so it says nothing of what runs.
-          line.textContent = `${SITE_DEPLOY_LABEL}: ${sha ? sha.slice(0, 12) : "unavailable"}`;
-        });
+      line.textContent = `${SITE_DEPLOY_LABEL}: asking`;
+      void Promise.resolve().then(() => disposed ? null : deploy.read(controller.signal)).catch(() => null).then(sha => {
+        if (!disposed) line.textContent = `${SITE_DEPLOY_LABEL}: ${typeof sha === "string" && /^[a-f\d]+$/i.test(sha) ? sha.slice(0, 12) : "unavailable"}`;
+      });
     }));
     app.append(line);
   }
@@ -231,13 +237,13 @@ export function createAboutPanel(options: AboutPanelOptions = {}): AboutPanelHan
       const links = partLinks(part);
       if (links.length) {
         const row = el("p", "foss-earth-about__links");
-        row.append(...links.map(link => externalLink(link.label, link.href)));
+        row.append(...links.map(link => externalLink(link.label, link.href, icon)));
         body.append(row);
       }
       const commits = commitsOf(part);
       if (commits.length) {
         body.append(el("p", "foss-earth-about__label", commits.length > 1 ? "Commits, the one it was built from first" : "The commit it was built from"));
-        body.append(commitList(commits, part.repository));
+        body.append(commitList(commits, part.repository ? safeExternalUrl(part.repository) ?? undefined : undefined, icon));
       }
       if (part.parts?.length) {
         const list = el("ul", "foss-earth-about__parts");
@@ -256,6 +262,8 @@ export function createAboutPanel(options: AboutPanelOptions = {}): AboutPanelHan
   return {
     element,
     dispose() {
+      if (disposed) return;
+      disposed = true;
       for (const stop of stops.splice(0)) stop();
     },
   };

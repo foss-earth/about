@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BUILT_FROM_ID, type BuiltFrom } from "../app/builtFrom";
-import type { PublishedVersion } from "../app/publishedVersion";
-import { createAboutPanel } from "./aboutPanel";
+import { BUILT_FROM_ID, readBuiltFrom, type BuiltFrom } from "../src/builtFrom.js";
+import { createAboutPanel } from "../src/panel.js";
 
 const APP = "7e80fdc8a1b2c3d4e5f60718293a4b5c6d7e8f90";
 const EARLIER = "9c195634a1b2c3d4e5f60718293a4b5c6d7e8f90";
@@ -48,7 +47,7 @@ const lines = (element: HTMLElement): string[] => [...element.querySelectorAll("
 
 describe("createAboutPanel", () => {
   it("names the build, then everything it is built from as a tree with the app at the top", () => {
-    const about = createAboutPanel({ builtFrom: FLIGHT, identity: IDENTITY, title: "0SFS" });
+    const about = createAboutPanel({ title: "0SFS", builtFrom: FLIGHT, identity: IDENTITY });
     document.body.append(about.element);
     expect(about.element.querySelector("h2")?.textContent).toBe("0SFS");
     expect(lines(about.element)).toEqual(["Version 26.10.7.3, built 2026-10-07 18:20 UTC.", "Bundle: index-AbCd1234.js"]);
@@ -70,7 +69,7 @@ describe("createAboutPanel", () => {
   });
 
   it("lists a part's commits alike, the one it was built from first", () => {
-    const about = createAboutPanel({ builtFrom: FLIGHT, identity: IDENTITY });
+    const about = createAboutPanel({ title: "0SFS", builtFrom: FLIGHT, identity: IDENTITY });
     const listOf = (index: number) => {
       const body = about.element.querySelectorAll<HTMLDetailsElement>("details")[index].querySelector(":scope > .foss-earth-about__body")!;
       return {
@@ -95,7 +94,7 @@ describe("createAboutPanel", () => {
   });
 
   it("links each part's commit, its history up to it, its source and its npm page", () => {
-    const about = createAboutPanel({ builtFrom: FLIGHT, identity: IDENTITY });
+    const about = createAboutPanel({ title: "0SFS", builtFrom: FLIGHT, identity: IDENTITY });
     const linksOf = (index: number) => [...about.element.querySelectorAll<HTMLDetailsElement>("details")[index]
       .querySelectorAll<HTMLAnchorElement>(":scope > .foss-earth-about__body > .foss-earth-about__links a")]
       .map(link => [link.textContent, link.href]);
@@ -122,7 +121,7 @@ describe("createAboutPanel", () => {
    * brought in, never as a second package of the same name.
    */
   it("points a package brought in twice to its one full entry, and opens it", () => {
-    const about = createAboutPanel({ builtFrom: FLIGHT, identity: IDENTITY });
+    const about = createAboutPanel({ title: "0SFS", builtFrom: FLIGHT, identity: IDENTITY });
     document.body.append(about.element);
     const above = about.element.querySelector<HTMLButtonElement>(".foss-earth-about__above")!;
     expect(above.closest(".foss-earth-about__row")?.textContent).toBe("@felipegalind0/gamepad-tools26.10.7.1same copy as above");
@@ -134,13 +133,13 @@ describe("createAboutPanel", () => {
   });
 
   it("says when a dev server served the page, and that its list is declared", () => {
-    const about = createAboutPanel({ builtFrom: { ...FLIGHT, built: "", dev: true }, identity: { ...IDENTITY, bundle: "dev" } });
+    const about = createAboutPanel({ title: "0SFS", builtFrom: { ...FLIGHT, built: "", dev: true }, identity: { ...IDENTITY, bundle: "dev" } });
     expect(lines(about.element)[0]).toBe("Version 26.10.7.3, served by a development server, started 2026-10-07 18:20 UTC: not a build.");
     expect(about.element.querySelector(".foss-earth-about__note")?.textContent).toContain("a development server has no bundle to list");
   });
 
   it("names the commits from the app's config where the page does not describe its build", () => {
-    const about = createAboutPanel({ builtFrom: null, identity: IDENTITY });
+    const about = createAboutPanel({ title: "0SFS", builtFrom: null, identity: IDENTITY });
     expect(lines(about.element)).toEqual([
       "Built 2026-10-07 18:20 UTC.",
       "Source: 7e80fdc8a1b2",
@@ -151,38 +150,40 @@ describe("createAboutPanel", () => {
   });
 
   it("follows whether the page is the published version", () => {
-    let state: PublishedVersion = { kind: "not-asked", build: IDENTITY.build };
+    let description = "The site has not been asked yet.";
     const listeners = new Set<() => void>();
-    const about = createAboutPanel({
+    const about = createAboutPanel({ title: "0SFS",
       builtFrom: FLIGHT,
       identity: IDENTITY,
-      publishedVersion: { state: () => state, now: () => 0, subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener); } },
+      publishedVersion: { describe: () => description, subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener); } },
     });
     const status = about.element.querySelector('[role="status"]')!;
     expect(status.textContent).toContain("has not been asked yet");
-    state = { kind: "published", build: IDENTITY.build, at: 0 };
+    description = "This page is the published version.";
     for (const listener of listeners) listener();
     expect(status.textContent).toContain("This page is the published version");
     about.dispose();
     expect(listeners.size).toBe(0);
   });
 
-  it("asks GitHub for the site's latest deploy once About is shown", async () => {
-    const fetcher = vi.fn(async () => new Response(JSON.stringify({ object: { sha: "8b0ab4ed380c4c57f87a1f0da8830e19e305df70" } })));
-    const about = createAboutPanel({ builtFrom: FLIGHT, identity: IDENTITY, site: "0SFS/0SFS.github.io", fetch: fetcher as unknown as typeof fetch });
-    // jsdom cannot tell when an element is on screen, so it is asked at once.
-    expect(fetcher).toHaveBeenCalledWith("https://api.github.com/repos/0SFS/0SFS.github.io/git/ref/heads/gh-pages", { cache: "no-store" });
+  it("asks the host for the site's latest deploy once About is shown", async () => {
+    const read = vi.fn(async (_signal: AbortSignal) => "8b0ab4ed380c4c57f87a1f0da8830e19e305df70");
+    const about = createAboutPanel({ title: "0SFS", builtFrom: FLIGHT, identity: IDENTITY, latestDeploy: { read } });
     await vi.waitFor(() => expect(lines(about.element)).toContain("Site's latest deploy: 8b0ab4ed380c"));
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(read.mock.calls[0][0]).toBeInstanceOf(AbortSignal);
+    about.dispose();
+    expect(read.mock.calls[0][0].aborted).toBe(true);
   });
 
-  it("reads the page's own description when given none", () => {
+  it("reads the page's own description when the host explicitly supplies it", () => {
     const script = document.createElement("script");
     script.type = "application/json";
     script.id = BUILT_FROM_ID;
     script.textContent = JSON.stringify(FLIGHT);
     document.head.append(script);
     try {
-      const about = createAboutPanel({ identity: IDENTITY });
+      const about = createAboutPanel({ title: "0SFS", identity: IDENTITY, builtFrom: readBuiltFrom(document) });
       expect(about.element.querySelector(".foss-earth-about__name")?.textContent).toBe("osfs");
     } finally {
       script.remove();

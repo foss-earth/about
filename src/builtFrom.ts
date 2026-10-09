@@ -9,6 +9,8 @@
  * built from, not what the site publishes now.
  */
 
+import { validateReleaseManifest, type ArtifactPin } from "./release.js";
+
 /** The id of the `<script type="application/json">` a page carries it in. */
 export const BUILT_FROM_ID = "foss-earth-built-from";
 
@@ -65,6 +67,8 @@ export interface BuiltFromPart {
   anotherCopy?: boolean;
   /** The packages it brings into the build. */
   parts?: BuiltFromPart[];
+  /** Optional exact release facts; reference/tool/content rows never imply runtime inclusion. */
+  artifact?: ArtifactPin;
 }
 
 export interface BuiltFrom {
@@ -81,7 +85,7 @@ export function readBuiltFrom(page: { getElementById(id: string): { textContent:
   if (!script?.textContent) return null;
   try {
     const value = JSON.parse(script.textContent) as Partial<BuiltFrom> | null;
-    return value && typeof value.built === "string" && value.app && typeof value.app.name === "string" ? value as BuiltFrom : null;
+    return isBuiltFrom(value) ? value : null;
   } catch {
     // A page whose JSON was cut short says nothing.
     return null;
@@ -91,20 +95,52 @@ export function readBuiltFrom(page: { getElementById(id: string): { textContent:
 /** A commit as `git log --oneline` shortens it, "a2c6c28". */
 export const shortCommit = (hash: string): string => hash.slice(0, 7);
 
+/** Validate page metadata before a host gives it to the DOM presentation. */
+export function isBuiltFrom(value: unknown): value is BuiltFrom {
+  if (!value || typeof value !== "object") return false;
+  const data = value as BuiltFrom;
+  if (typeof data.built !== "string" || (data.dev !== undefined && typeof data.dev !== "boolean")) return false;
+  const visited = new Set<object>();
+  function partValid(part: BuiltFromPart): boolean {
+    if (!part || typeof part !== "object" || visited.has(part)) return false;
+    visited.add(part);
+    if (typeof part.name !== "string" || !part.name || !["app", "checkout", "file", "registry"].includes(part.from)) return false;
+    for (const key of ["version", "repository", "commit", "built"] as const) if (part[key] !== undefined && typeof part[key] !== "string") return false;
+    for (const key of ["dirty", "unpushed", "listedAbove", "anotherCopy"] as const) if (part[key] !== undefined && typeof part[key] !== "boolean") return false;
+    if (part.history !== undefined && (!Array.isArray(part.history) || part.history.some(commit => !commit || typeof commit.hash !== "string" || typeof commit.at !== "string" || typeof commit.subject !== "string"))) return false;
+    if (part.artifact) {
+      try { validateReleaseManifest({ schemaVersion: 1, host: data.app.name, artifacts: [part.artifact] }); }
+      catch { return false; }
+    }
+    return part.parts === undefined || Array.isArray(part.parts) && part.parts.every(partValid);
+  }
+  return partValid(data.app);
+}
+
+/** Only explicit HTTP(S) source links; metadata cannot create executable URLs. */
+export function safeExternalUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password ? url.href.replace(/\/$/, "") : null;
+  } catch { return null; }
+}
+
 /** The links a part's source gives: its repository, its commit, and the history up to that commit. */
 export function partLinks(part: Pick<BuiltFromPart, "repository" | "commit" | "name" | "version" | "from">): { label: string; href: string }[] {
   const links: { label: string; href: string }[] = [];
-  if (part.repository) {
+  const repository = part.repository ? safeExternalUrl(part.repository) : null;
+  if (repository) {
     if (part.commit) {
-      links.push({ label: "Commit", href: `${part.repository}/commit/${part.commit}` });
-      links.push({ label: "History", href: `${part.repository}/commits/${part.commit}` });
-      links.push({ label: "Source", href: `${part.repository}/tree/${part.commit}` });
+      links.push({ label: "Commit", href: `${repository}/commit/${encodeURIComponent(part.commit)}` });
+      links.push({ label: "History", href: `${repository}/commits/${encodeURIComponent(part.commit)}` });
+      links.push({ label: "Source", href: `${repository}/tree/${encodeURIComponent(part.commit)}` });
     } else {
-      links.push({ label: "Source", href: part.repository });
+      links.push({ label: "Source", href: repository });
     }
   }
   if (part.from === "registry" && part.version) {
-    links.push({ label: "npm", href: `https://www.npmjs.com/package/${part.name}/v/${part.version}` });
+    const name = part.name.split("/").map(encodeURIComponent).join("/");
+    links.push({ label: "npm", href: `https://www.npmjs.com/package/${name}/v/${encodeURIComponent(part.version)}` });
   }
   return links;
 }
