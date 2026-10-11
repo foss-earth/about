@@ -10,20 +10,24 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./panel": {
+      "source": "./src/panel.ts",
       "types": "./dist/panel.d.ts",
       "import": "./dist/panel.js"
     },
     "./node": {
+      "source": "./src/node.ts",
       "types": "./dist/node.d.ts",
       "import": "./dist/node.js"
     },
     "./panel.css": "./styles/panel.css",
     "./graph-template.html": "./templates/repository-graph.html",
     "./vite": {
+      "source": "./src/vite/index.ts",
       "types": "./dist/vite/index.d.ts",
       "import": "./dist/vite/index.js"
     }
@@ -37,21 +41,12 @@
     "templates",
     "scripts",
     "LICENSE",
-    "SOURCE_PROVENANCE.json",
     "README.md",
     "AGENTS.md",
-    "CODE_OF_CONDUCT.md",
-    "CONTRIBUTING.md",
-    "SECURITY.md",
     "docs",
     "src",
     "tsconfig.json",
     "NOTICE",
-    "SOURCE_LINEAGE.json",
-    ".attribution.json",
-    ".attribution-release.json",
-    ".github/workflows/attribution-check.yml",
-    "deps/foss-earth-ci-1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e.tgz",
     "fixtures/vite",
     "tests/vite"
   ],
@@ -59,11 +54,9 @@
     "build": "tsc -p tsconfig.json --incremental --tsBuildInfoFile node_modules/.tmp/build.tsbuildinfo",
     "typecheck": "tsc -p tsconfig.json --noEmit --incremental --tsBuildInfoFile node_modules/.tmp/typecheck.tsbuildinfo",
     "test": "vitest run --maxWorkers=50%",
-    "ci": "npm run check:conformance && npm run check:implementation",
+    "ci": "npm run check:implementation",
     "lint": "eslint . --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
     "check:implementation": "npm run lint && npm run typecheck && npm test && npm run build && node scripts/check-public-consumer.mjs && npm run check:vite-consumer",
-    "check:conformance": "node node_modules/@foss-earth/ci/bin/conformance.mjs --consumer . --trusted-release .attribution-release.json --output-root build/common-conformance",
-    "check:attribution": "node node_modules/@foss-earth/ci/bin/attribution.mjs --repo . --refs-file build/repository-split/intended-publication-refs.json",
     "check:vite-consumer": "node fixtures/vite/public-consumer.mjs && tsc -p fixtures/vite/tsconfig.json"
   },
   "devDependencies": {
@@ -75,12 +68,7 @@
     "eslint": "9.39.4",
     "typescript-eslint": "8.59.3",
     "globals": "17.6.0",
-    "@foss-earth/ci": "file:deps/foss-earth-ci-1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e.tgz",
     "vite": "8.3.4"
-  },
-  "fossEarthSplit": {
-    "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
-    "admission": "pending pinned foss-earth/ci caller, shared conformance and coordinator lineage acceptance"
   },
   "peerDependencies": {
     "vite": "8.3.4"

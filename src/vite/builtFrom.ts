@@ -85,10 +85,10 @@ const COMMIT = /^[0-9a-f]{40}$/;
 const VERSION_LOOKBACK = 400;
 
 /**
- * A commit's version, as every checkout's is named: "26.10.7.3", the last two
+ * A commit's version, as every checkout's is named: "26.10.07.#3", the last two
  * digits of the year, the month and the day it was committed, in the time zone
- * it was committed in, then its count among that day's commits, the day's
- * first being 1. Read from the history, so nothing has to be kept in step by
+ * it was committed in, then "#" and its count among that day's commits, the
+ * day's first being 1 (the organization's CONTRIBUTING.md, "Versions"). Read from the history, so nothing has to be kept in step by
  * hand, and a later commit is always a later version. `days` are the commit's
  * date and those before it, newest first, as `git log --date=short` gives
  * them; undefined where the first is no date.
@@ -97,7 +97,7 @@ export function commitVersion(days: readonly string[]): string | undefined {
   const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(days[0] ?? "");
   if (!date) return undefined;
   const revision = days.filter(day => day === days[0]).length;
-  return `${date[1].slice(2)}.${Number(date[2])}.${Number(date[3])}.${revision}`;
+  return `${date[1].slice(2)}.${date[2]}.${date[3]}.#${revision}`;
 }
 /** The most of a commit's first line that is kept: some messages are one long line. */
 const SUBJECT_CHARS = 160;
