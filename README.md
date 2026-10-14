@@ -4,7 +4,7 @@ Presents what a FOSS Earth host was built from: its build identity, a tree of th
 
 ## Versions
 
-An app or a checkout is versioned by its latest commit, in the form `YY.MM.DD.#N`: the last two digits of the year, the month and the day of the commit, then `#` and the commit's count among that day's commits. For example, `26.10.11.#1` is the first commit made on October 11, 2026. The scheme is defined in [CONTRIBUTING](https://github.com/foss-earth/.github/blob/main/CONTRIBUTING.md#versions). A package from a registry shows the version its own package.json gives.
+An app or a checkout is versioned by its latest commit, by the organization's rule in [CONTRIBUTING](https://github.com/foss-earth/.github/blob/main/CONTRIBUTING.md#versions), and this package is that rule's one implementation: `commitVersion` (from a checkout's history), `checkoutVersion` (for a script with no Vite build, such as a site's own page) and `recordBuildInputs` (a deploy's `deployed-from.json`, so new code in any checkout an app is built from is a new version), all from `@foss-earth/about/vite`. Every FOSS Earth, UMN VR and 0SFS app and site takes its version from here. A package from a registry shows the version its own package.json gives.
 
 ## Exports
 

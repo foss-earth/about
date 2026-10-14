@@ -8,9 +8,10 @@ const adapter = await import("@foss-earth/about/vite");
 const core = await import("@foss-earth/about");
 assert.equal(adapter.BUILT_FROM_ID, core.BUILT_FROM_ID);
 assert.equal(adapter.isBuiltFrom, core.isBuiltFrom);
-for (const name of ["builtFrom", "describeBuild", "bundledPackages", "commitVersion", "webRepository", "definedString", "buildStamp"]) assert.equal(typeof adapter[name], "function", name);
+for (const name of ["builtFrom", "describeBuild", "bundledPackages", "commitDay", "commitVersion", "checkoutVersion", "buildCheckouts", "recordBuildInputs", "webRepository", "definedString", "buildStamp"]) assert.equal(typeof adapter[name], "function", name);
 assert.equal(typeof adapter.nodeBuildReader.manifest, "function");
 assert.equal(adapter.commitVersion(["2026-10-09"]), "26.10.09.#1");
+assert.equal(adapter.DEPLOY_RECORD, "deployed-from.json");
 assert.equal(adapter.webRepository("https://user:secret@example.org/owner/repo.git"), "https://example.org/owner/repo");
 
 const root = "/synthetic-public-consumer/host";
@@ -26,7 +27,7 @@ const reader = {
     if (args[0] === "rev-parse") return args[1] === "--show-toplevel" ? dir : head;
     if (args[0] === "remote") return `https://github.com/example/${dir === root ? "host" : "owner"}.git`;
     if (args[0] === "branch") return "  origin/main";
-    if (args[0] === "log") return `${head}\x1f2026-10-09T12:00:00Z\x1f2026-10-09\x1fSynthetic fixture`;
+    if (args[0] === "log") return `${head}\x1f2026-10-09T12:00:00Z\x1fSynthetic fixture`;
     return "";
   },
 };

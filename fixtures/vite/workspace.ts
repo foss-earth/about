@@ -39,7 +39,7 @@ export function workspace(options: {
       if (command === "remote") return info.remote ?? null;
       if (command === "status") return info.changed ?? "";
       if (command === "branch") return info.pushed === false ? "" : "  origin/main";
-      if (command === "log") return info.log ?? `${info.head}\x1f2026-10-07T11:00:39-05:00\x1f2026-10-07\x1fThe latest change`;
+      if (command === "log") return info.log ?? `${info.head}\x1f2026-10-07T11:00:39-05:00\x1fThe latest change`;
       if (command === "ls-files") return info.tracked?.includes(rest.at(-1)!) ? rest.at(-1)! : null;
       return null;
     },

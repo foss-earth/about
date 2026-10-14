@@ -1,7 +1,7 @@
 /** Generic causal fixtures extracted from website tests; package names are synthetic metadata, never runtime imports. */
 import { describe, expect, it } from "vitest";
 import type { BuiltFromPart } from "../../src/builtFrom.js";
-import { bundledPackages, commitVersion, describeBuild, webRepository } from "../../src/vite/index.js";
+import { bundledPackages, commitDay, commitVersion, describeBuild, webRepository } from "../../src/vite/index.js";
 import { workspace } from "../../fixtures/vite/workspace.js";
 
 const HEAD = "a2c6c2894e12a2c6c2894e12a2c6c2894e12a2c6";
@@ -49,10 +49,10 @@ function dependencyWorkspace(pushed = true) {
     checkouts: {
       [app]: { head: HEAD, remote: "https://someone:ghp_secret@github.com/0SFS/0SFS.github.io.git", pushed },
       "/w/foss-earth": { head: EARTH, remote: "git@github.com:foss-earth/foss-earth.github.io.git", log: [
-        `${EARTH}\x1f2026-10-07T11:00:39-05:00\x1f2026-10-07\x1fThe latest change`,
-        `${"1".repeat(40)}\x1f2026-10-07T09:12:00-05:00\x1f2026-10-07\x1fThe one before it`,
-        `${"2".repeat(40)}\x1f2026-10-07T00:13:01-05:00\x1f2026-10-07\x1fThe day's first`,
-        `${"3".repeat(40)}\x1f2026-10-06T17:58:57-05:00\x1f2026-10-06\x1fThe day before's`,
+        `${EARTH}\x1f2026-10-07T11:00:39-05:00\x1fThe latest change`,
+        `${"1".repeat(40)}\x1f2026-10-07T09:12:00-05:00\x1fThe one before it`,
+        `${"2".repeat(40)}\x1f2026-10-07T00:13:01-05:00\x1fThe day's first`,
+        `${"3".repeat(40)}\x1f2026-10-06T17:58:57-05:00\x1fThe day before's`,
       ].join("\n") },
       "/w/pads": { head: PADS, remote: "https://github.com/Felipegalind0/gamepad-tools.git", changed: " M src/browser/source.ts", tracked: [] },
     },
@@ -146,7 +146,7 @@ describe("describeBuild", () => {
   it("keeps a commit's first line short", () => {
     const reader = dependencyWorkspace();
     const long = "Size the profile and controller dropdowns to their own text ".repeat(6);
-    reader.git = (dir, args) => (args[0] === "log" ? `${HEAD}\x1f2026-10-07T11:00:39-05:00\x1f2026-10-07\x1f${long}` : dependencyWorkspace().git(dir, args));
+    reader.git = (dir, args) => (args[0] === "log" ? `${HEAD}\x1f2026-10-07T11:00:39-05:00\x1f${long}` : dependencyWorkspace().git(dir, args));
     const tree = describeBuild({ root: "/w/0sfs", built: "", bundled: new Set(["/w/0sfs"]), reader });
     const subject = tree.app.history![0].subject;
     expect(subject.length).toBeLessThanOrEqual(160);
@@ -201,6 +201,33 @@ describe("commitVersion", () => {
   it("is nothing without a date", () => {
     expect(commitVersion([])).toBeUndefined();
     expect(commitVersion(["yesterday"])).toBeUndefined();
+  });
+});
+
+describe("commitDay", () => {
+  it("is the commit's date in UTC, whatever zone it was made in", () => {
+    expect(commitDay("2026-10-13T23:05:18-05:00")).toBe("2026-10-14");
+    expect(commitDay("2026-10-14T00:30:00+02:00")).toBe("2026-10-13");
+    expect(commitDay("2026-10-14T04:05:00Z")).toBe("2026-10-14");
+    expect(commitDay("not a time")).toBe("");
+  });
+
+  /**
+   * The tour's commit of 23:05 in Minneapolis on 13 October 2026 showed as
+   * 2026-10-14 04:05 UTC beside the version 26.10.13.#1.
+   */
+  it("names a checkout's version by the same day About shows its commit on", () => {
+    const reader = workspace({
+      manifests: { "/w/tour": { name: "@umn-vr/tour", version: "0.1.0", private: true } },
+      checkouts: { "/w/tour": { head: EARTH, log: [
+        `${EARTH}\x1f2026-10-13T23:05:18-05:00\x1fIn Minneapolis that evening`,
+        `${"1".repeat(40)}\x1f2026-10-14T02:00:00+01:00\x1fEarlier, in London, after midnight there`,
+        `${"2".repeat(40)}\x1f2026-10-13T12:00:00-05:00\x1fThat afternoon`,
+      ].join("\n") } },
+    });
+    const tree = describeBuild({ root: "/w/tour", built: "", bundled: new Set(["/w/tour"]), reader });
+    expect(tree.app.version).toBe("26.10.14.#2");
+    expect(tree.app.history![0].at).toBe("2026-10-13T23:05:18-05:00");
   });
 });
 

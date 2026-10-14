@@ -86,18 +86,31 @@ const VERSION_LOOKBACK = 400;
 
 /**
  * A commit's version, as every checkout's is named: "26.10.07.#3", the last two
- * digits of the year, the month and the day it was committed, in the time zone
- * it was committed in, then "#" and its count among that day's commits, the
- * day's first being 1 (the organization's CONTRIBUTING.md, "Versions"). Read from the history, so nothing has to be kept in step by
- * hand, and a later commit is always a later version. `days` are the commit's
- * date and those before it, newest first, as `git log --date=short` gives
- * them; undefined where the first is no date.
+ * digits of the year, the month and the day it was committed, in UTC, then "#"
+ * and its count among that day's commits, the day's first being 1 (the
+ * organization's CONTRIBUTING.md, "Versions"). Read from the history, so nothing
+ * has to be kept in step by hand, and a later commit is always a later version,
+ * wherever it was made. `days` are the commit's UTC date and those before it,
+ * newest first, as `commitDay` gives them; undefined where the first is no date.
  */
 export function commitVersion(days: readonly string[]): string | undefined {
   const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(days[0] ?? "");
   if (!date) return undefined;
   const revision = days.filter(day => day === days[0]).length;
   return `${date[1].slice(2)}.${date[2]}.${date[3]}.#${revision}`;
+}
+/** A commit's day in UTC, "2026-10-14", from its ISO time; "" for anything that is not a time. */
+export function commitDay(at: string): string {
+  const time = Date.parse(at);
+  return Number.isNaN(time) ? "" : new Date(time).toISOString().slice(0, 10);
+}
+/**
+ * The version of the commit checked out in `dir`, as `commitVersion` names it, for
+ * a script that has no Vite build: a site's own page, a deploy. Undefined where
+ * `dir` has no history.
+ */
+export function checkoutVersion(dir: string, reader: BuildReader = nodeBuildReader): string | undefined {
+  return commitVersion((reader.git(dir, ["log", `-n${VERSION_LOOKBACK}`, "--format=%cI"]) ?? "").split("\n").map(commitDay));
 }
 /** The most of a commit's first line that is kept: some messages are one long line. */
 const SUBJECT_CHARS = 160;
@@ -284,13 +297,13 @@ export function describeBuild(input: DescribeBuildInput): BuiltFrom {
 
   /** A checkout's latest commits, and its version, which counts the built commit among its day's. */
   const historyOf = (dir: string): { history: BuiltFromCommit[]; version: string | undefined } => {
-    const commits = (reader.git(dir, ["log", `-n${Math.max(VERSION_LOOKBACK, historyLength)}`, "--date=short", "--format=%H%x1f%cI%x1f%cd%x1f%s"]) ?? "")
+    const commits = (reader.git(dir, ["log", `-n${Math.max(VERSION_LOOKBACK, historyLength)}`, "--format=%H%x1f%cI%x1f%s"]) ?? "")
       .split("\n")
       .map(line => line.split("\x1f"))
       .filter(([hash, at]) => COMMIT.test(hash ?? "") && Boolean(at));
     return {
-      history: commits.slice(0, historyLength).map(([hash, at, , ...subject]) => ({ hash, at, subject: clip(subject.join("\x1f")) })),
-      version: commitVersion(commits.map(([, , day]) => day ?? "")),
+      history: commits.slice(0, historyLength).map(([hash, at, ...subject]) => ({ hash, at, subject: clip(subject.join("\x1f")) })),
+      version: commitVersion(commits.map(([, at]) => commitDay(at ?? ""))),
     };
   };
 
