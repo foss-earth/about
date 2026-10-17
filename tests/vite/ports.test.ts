@@ -63,7 +63,7 @@ describe("explicit host provenance ports", () => {
     const result = JSON.parse(tag.children) as BuiltFrom;
     expect(result).toMatchObject({ built: STAMP, app: { name: "host", commit: HEAD } });
     expect(result.app.parts?.[0]).toMatchObject({ name: "owner", from: "checkout", commit: OWNER });
-    expect(tag).toMatchObject({ tag: "script", attrs: { id: "foss-earth-built-from", type: "application/json" } });
+    expect(tag).toMatchObject({ tag: "script", attrs: { id: "foss-earth-built-from", type: "application/json" }, injectTo: "body" });
   });
 
   it("accounts for modules dictionaries and asset origins without treating virtual modules as packages", () => {

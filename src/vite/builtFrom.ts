@@ -461,7 +461,9 @@ export function builtFrom(options: BuiltFromOptions = {}): Plugin {
         json = scriptJson(describeBuild({ ...options, root, built, appSource, dedupe, bundled: bundle ? bundledPackages(bundle, root, options.reader) : null }));
         if (bundle) described.set(bundle, json);
       }
-      return [{ tag: "script", attrs: { type: "application/json", id: BUILT_FROM_ID }, children: json, injectTo: "head" }];
+      // At the end of the body: its tens of KB come after what the page paints first (docs/proposals/startup-loading.md),
+      // and the app's modules, which run once the page is parsed, still read it at once.
+      return [{ tag: "script", attrs: { type: "application/json", id: BUILT_FROM_ID }, children: json, injectTo: "body" }];
     },
   };
 }
