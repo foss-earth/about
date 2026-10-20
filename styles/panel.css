@@ -47,11 +47,42 @@
   list-style: none;
 }
 
+/*
+ * What a part brings in sits inside it, never indented under it: each part is
+ * a rounded rectangle, the parameter rows' enclosure, holding its own line and
+ * then its parts' rectangles, as matryoshka dolls hold each other. Closed parts
+ * flow at their own widths, wrapping as words do; an open one takes the line.
+ */
 .foss-earth-about__parts {
-  display: grid;
-  gap: 2px;
-  padding-left: 6px;
-  border-left: 1px solid rgba(148, 163, 184, 0.28);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.foss-earth-about__part {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+  padding: 3px 6px;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+/* Each level a step smaller and tighter, so five fit in a 360 px phone. */
+.foss-earth-about__part .foss-earth-about__part {
+  border-radius: 8px;
+  padding: 2px 5px;
+}
+
+.foss-earth-about__part .foss-earth-about__part .foss-earth-about__part {
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.foss-earth-about__part:has(> .foss-earth-about__details[open]) {
+  flex-basis: 100%;
 }
 
 .foss-earth-about__row {
@@ -88,6 +119,7 @@ summary.foss-earth-about__row:focus-visible {
 
 .foss-earth-about__name {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .foss-earth-about__version {
@@ -113,7 +145,7 @@ summary.foss-earth-about__row:focus-visible {
 .foss-earth-about__body {
   display: grid;
   gap: 3px;
-  padding: 2px 0 3px 7px;
+  padding: 2px 0 1px;
 }
 
 .foss-earth-about__links {
@@ -181,8 +213,13 @@ summary.foss-earth-about__row:focus-visible {
   color: #1d4ed8;
 }
 
-:root[data-theme="light"] .foss-earth-about__parts {
-  border-left-color: rgba(71, 85, 105, 0.25);
+:root[data-theme="light"] .foss-earth-about__part {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+/* A brand palette (ui's theme.css) draws the boxes with its own border. */
+[data-ui-theme]:not([data-ui-theme="earth"]) .foss-earth-about__part {
+  border-color: var(--ui-border);
 }
 
 @media (prefers-reduced-motion: reduce) {

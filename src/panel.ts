@@ -4,7 +4,9 @@ import { createExternalLinkIcon } from "./externalLinkIcon.js";
 
 /**
  * The About tab: which version of the app runs, and everything it is built
- * from as a tree, the app at the top and what each part brings in under it.
+ * from as a tree, the app outermost and what each part brings in inside it:
+ * each part is a rounded rectangle holding its own line, then the rectangles
+ * of its parts, never indented (styles/panel.css).
  * Each part's line gives its name and version, the app's and a checkout's
  * being its commit's, "26.10.07.#3", and whether it had changes not committed
  * or not pushed. Opened, it lists its commits, the one it was built from
@@ -204,11 +206,12 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
     element.append(el(document, "h3", "foss-earth-about__heading", "Built from"));
     element.append(el(document, "p", "foss-earth-about__note", builtFrom.dev
       ? "The packages the app and its checkouts declare: a development server has no bundle to list."
-      : "Everything this build holds, under the part that brought it in. Open a part for its commits and links to its source."));
+      : "Everything this build holds, inside the part that brought it in. Open a part for its commits and links to its source."));
     /** Each part listed in full, by name and version, for "same copy as above" to open. */
     const full = new Map<string, HTMLDetailsElement>();
     const keyOf = (part: Pick<BuiltFromPart, "name" | "version">): string => `${part.name}@${part.version ?? ""}`;
 
+    /** A part's enclosure: its line first, then, open, its facts, commits and its own parts' enclosures. */
     const renderPart = (part: BuiltFromPart, depth: number): HTMLElement => {
       const item = el(document, "li", "foss-earth-about__part");
       if (part.listedAbove) {
@@ -255,6 +258,8 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
       }
       if (part.parts?.length) {
         const list = el(document, "ul", "foss-earth-about__parts");
+        // Its flex layout and list-style: none cost a list its role in WebKit.
+        list.setAttribute("role", "list");
         list.append(...part.parts.map(child => renderPart(child, depth + 1)));
         body.append(list);
       }
@@ -263,6 +268,7 @@ export function createAboutPanel(options: AboutPanelOptions): AboutPanelHandle {
       return item;
     };
     const tree = el(document, "ul", "foss-earth-about__tree");
+    tree.setAttribute("role", "list");
     tree.append(renderPart(builtFrom.app, 0));
     element.append(tree);
   }
