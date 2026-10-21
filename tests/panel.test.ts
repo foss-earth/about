@@ -46,6 +46,15 @@ afterEach(() => {
 const lines = (element: HTMLElement): string[] => [...element.querySelectorAll(".foss-earth-about__app .foss-earth-about__line")].map(line => line.textContent ?? "");
 
 describe("createAboutPanel", () => {
+  it.each(["26.10.20#4", "26.10.20.#4"])("preserves a supplied version %s when reading and displaying a build", version => {
+    const metadata: BuiltFrom = { ...FLIGHT, app: { ...FLIGHT.app, version } };
+    const read = readBuiltFrom({ getElementById: () => ({ textContent: JSON.stringify(metadata) }) });
+    expect(read?.app.version).toBe(version);
+    const about = createAboutPanel({ title: "0SFS", builtFrom: read, identity: IDENTITY });
+    expect(lines(about.element)[0]).toBe(`Version ${version}, built 2026-10-07 18:20 UTC.`);
+    expect(about.element.querySelector("summary")?.textContent).toContain(version);
+  });
+
   it("names the build, then everything it is built from as a tree with the app at the top", () => {
     const about = createAboutPanel({ title: "0SFS", builtFrom: FLIGHT, identity: IDENTITY });
     document.body.append(about.element);

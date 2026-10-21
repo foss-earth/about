@@ -8,7 +8,7 @@ import { createExternalLinkIcon } from "./externalLinkIcon.js";
  * each part is a rounded rectangle holding its own line, then the rectangles
  * of its parts, never indented (styles/panel.css).
  * Each part's line gives its name and version, the app's and a checkout's
- * being its commit's, "26.10.07.#3", and whether it had changes not committed
+ * being its commit's, "26.10.07#3", and whether it had changes not committed
  * or not pushed. Opened, it lists its commits, the one it was built from
  * first and every one alike, and links to that commit, the history up to it
  * and its source. What it shows comes from the page itself

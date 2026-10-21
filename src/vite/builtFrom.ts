@@ -85,7 +85,7 @@ const COMMIT = /^[0-9a-f]{40}$/;
 const VERSION_LOOKBACK = 400;
 
 /**
- * A commit's version, as every checkout's is named: "26.10.07.#3", the last two
+ * A commit's version, as every checkout's is named: "26.10.07#3", the last two
  * digits of the year, the month and the day it was committed, in UTC, then "#"
  * and its count among that day's commits, the day's first being 1 (the
  * organization's CONTRIBUTING.md, "Versions"). Read from the history, so nothing
@@ -97,7 +97,7 @@ export function commitVersion(days: readonly string[]): string | undefined {
   const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(days[0] ?? "");
   if (!date) return undefined;
   const revision = days.filter(day => day === days[0]).length;
-  return `${date[1].slice(2)}.${date[2]}.${date[3]}.#${revision}`;
+  return `${date[1].slice(2)}.${date[2]}.${date[3]}#${revision}`;
 }
 /** A commit's day in UTC, "2026-10-14", from its ISO time; "" for anything that is not a time. */
 export function commitDay(at: string): string {

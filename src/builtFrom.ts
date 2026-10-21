@@ -35,7 +35,7 @@ export interface BuiltFromPart {
   /** The package's name, as its package.json gives it: "foss-earth", "@babylonjs/core". */
   name: string;
   /**
-   * Its version. The app's and a checkout's is its commit's, "26.10.07.#3": the
+   * Its version. The app's and a checkout's is its commit's, "26.10.07#3": the
    * last two digits of the year, the month and the day of the commit in UTC, then
    * "#" and its count among that day's commits (`commitVersion` in vite/builtFrom.ts).
    * A package's is the one its package.json gives.

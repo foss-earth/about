@@ -150,6 +150,6 @@ describe("checkoutVersion", () => {
     // 23:05 in Minneapolis on 13 October is 04:05 UTC on the 14th; 02:00 in London on the 14th is 01:00 UTC.
     commit("2026-10-13T23:05:00-05:00");
     commit("2026-10-14T02:00:00+01:00");
-    expect(checkoutVersion(dir)).toBe("26.10.14.#2");
+    expect(checkoutVersion(dir)).toBe("26.10.14#2");
   });
 });
