@@ -3,7 +3,10 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkoutVersion, recordBuildInputs, type RecordBuildInputsOptions } from "../../src/vite/index.js";
+import {
+  BUILT_FROM_ID, checkoutVersion, describeBuild, differentBuild, readBuiltFromHtml, rebuildReason, recordBuildInputs,
+  type BuiltFrom, type RecordBuildInputsOptions,
+} from "../../src/vite/index.js";
 
 const fixtures = path.join(fileURLToPath(new URL("../../", import.meta.url)), "build", "checks");
 const folders: string[] = [];
@@ -92,7 +95,7 @@ describe("recordBuildInputs", () => {
   it("names a checkout with changes not committed", () => {
     const { campus, messages, record } = workspace();
     put(campus, "scene.json", '{"draft":true}');
-    record({ dryRun: true });
+    expect(record({ dryRun: true }).dirty).toEqual(["@umn-vr/campus"]);
     expect(messages).toContain("@umn-vr/campus has changes not committed: this deploy carries them, but no commit names them.");
   });
 
@@ -135,6 +138,73 @@ describe("recordBuildInputs", () => {
     const { app, record } = workspace();
     git(app, ["branch", "--unset-upstream"]);
     expect(() => record()).toThrow("app's main has no upstream: push it once with git push -u.");
+  });
+});
+
+/** The page a build of `app` now would publish, at `built`. */
+const built = (app: string, built = "2026-10-22T12:00:00.000Z"): BuiltFrom => describeBuild({ root: app, built, bundled: null });
+const page = (record: BuiltFrom): string => `<body><script type="application/json" id="${BUILT_FROM_ID}">${JSON.stringify(record)}</script></body>`;
+
+describe("rebuildReason", () => {
+  /** A workspace deployed once: its record committed and pushed, and its page published. */
+  function deployed() {
+    const space = workspace();
+    space.record();
+    return { ...space, published: page(built(space.app)) };
+  }
+  const reason = (app: string, published: string | null, inputs: ReturnType<typeof recordBuildInputs>, env: Record<string, string> = {}) =>
+    rebuildReason({ root: app, page: published, inputs, env });
+
+  it("finds nothing to build when the published page was built from the same commits, none with changes", () => {
+    const { app, record, published } = deployed();
+    expect(readBuiltFromHtml(published)?.app.commit).toBe(git(app, ["rev-parse", "HEAD"]));
+    expect(reason(app, published, record())).toBeUndefined();
+  });
+
+  it("builds when a checkout moved, the app moved, or nothing is published", () => {
+    const { app, record, moveCampus, published } = deployed();
+    expect(reason(app, null, record())).toBe("the published page does not say what it was built from");
+    moveCampus("A new scene");
+    expect(reason(app, published, record({ dryRun: true }))).toMatch(/^a checkout moved since the last deploy: @umn-vr\/campus: /);
+    expect(reason(app, published, record())).toMatch(/^a checkout moved since the last deploy: /);
+    // Once recorded, the app's own commit is the one the page was not built from.
+    expect(reason(app, published, record())).toMatch(/^@umn-vr\/tour is at [0-9a-f]{12}, and the published build at [0-9a-f]{12}$/);
+  });
+
+  it("builds when the app or a checkout has changes not committed, now or when the page was built", () => {
+    const { app, campus, record, published } = deployed();
+    put(app, "src/main.ts", "draft");
+    expect(reason(app, published, record({ dryRun: true }))).toBe("@umn-vr/tour has changes not committed");
+    rmSync(path.join(app, "src"), { recursive: true });
+    put(campus, "scene.json", '{"draft":true}');
+    expect(reason(app, published, record({ dryRun: true }))).toBe("@umn-vr/campus has changes not committed");
+    const dirtyPage = page(built(app));
+    git(campus, ["checkout", "--", "scene.json"]);
+    expect(reason(app, dirtyPage, record({ dryRun: true }))).toBe("the published build had changes not committed in @umn-vr/campus");
+  });
+
+  it("builds when a VITE_ setting, which a page does not record, would be read", () => {
+    const { app, record, published } = deployed();
+    expect(reason(app, published, record(), { VITE_ICE_SERVERS: "[]" })).toBe("the build would read VITE_ICE_SERVERS, which the published page does not record");
+    put(app, ".gitignore", "node_modules/\n.env.local\n");
+    git(app, ["commit", "-q", "-am", "Ignore local settings"]);
+    git(app, ["push", "-q"]);
+    put(app, ".env.local", "GOOGLE_3D_TILES_KEY=not-read-by-the-bundle\nexport VITE_TOUR_SCENE_URL=/elsewhere\n");
+    expect(reason(app, page(built(app)), record())).toBe("the build would read VITE_TOUR_SCENE_URL, which the published page does not record");
+  });
+});
+
+describe("differentBuild", () => {
+  it("tells builds of the same commits apart only by what they were built from, not when", () => {
+    const { app, campus, record, moveCampus } = workspace();
+    record();
+    const first = built(app, "2026-10-22T12:00:00.000Z");
+    expect(differentBuild(first, built(app, "2026-10-23T08:00:00.000Z"))).toBeUndefined();
+    expect(differentBuild(null, first)).toBe("the published page does not say what it was built from");
+    put(campus, "scene.json", '{"draft":true}');
+    expect(differentBuild(first, built(app))).toBe("built with changes not committed in @umn-vr/campus");
+    moveCampus("A new scene");
+    expect(differentBuild(first, built(app))).toMatch(/^@umn-vr\/tour [0-9a-f]{12} is not the published [0-9a-f]{12}, or a checkout it is built from moved$/);
   });
 });
 

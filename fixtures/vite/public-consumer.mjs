@@ -8,7 +8,7 @@ const adapter = await import("@foss-earth/about/vite");
 const core = await import("@foss-earth/about");
 assert.equal(adapter.BUILT_FROM_ID, core.BUILT_FROM_ID);
 assert.equal(adapter.isBuiltFrom, core.isBuiltFrom);
-for (const name of ["builtFrom", "describeBuild", "bundledPackages", "commitDay", "commitVersion", "checkoutVersion", "buildCheckouts", "recordBuildInputs", "webRepository", "definedString", "buildStamp"]) assert.equal(typeof adapter[name], "function", name);
+for (const name of ["builtFrom", "describeBuild", "bundledPackages", "commitDay", "commitVersion", "checkoutVersion", "buildCheckouts", "recordBuildInputs", "readBuiltFromHtml", "rebuildReason", "differentBuild", "webRepository", "definedString", "buildStamp"]) assert.equal(typeof adapter[name], "function", name);
 assert.equal(typeof adapter.nodeBuildReader.manifest, "function");
 assert.equal(adapter.commitVersion(["2026-10-09"]), "26.10.09#1");
 assert.equal(adapter.DEPLOY_RECORD, "deployed-from.json");
